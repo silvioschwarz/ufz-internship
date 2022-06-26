@@ -56,34 +56,34 @@ footer {
   max-height: 100%;
 }
 
+.selection-div{
+  width: 25%;
+  height: 100%;
+  position: relative;
+  /* background-color: cornflowerblue; */
+}
+
 aside{
-  width: 30%;
+  width: 100%;
+  height: 100%;
+  /* background-color: chocolate; */
   display: flex;
   flex-direction: column;
   row-gap: 1%;
+  position: absolute;
 }
 
-.heatmap-container{
-  background-color: aquamarine;
-  width: 100%;
-  height: 30%;
-}
-
-.heatmap-container > .ol-map{
+.loading-div{
   width: 100%;
   height: 100%;
-}
-
-.statistics-container{
-  width: 100%;
-  background-color: blueviolet;
-  height: 70%;
-  padding: 10px;
-}
-
-.statistics-stations{
-  max-height: 45%;
-  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  background-color: gray;
+  opacity: 50%;
+  border-radius: 10px;
+  position: absolute;
 }
 
 
