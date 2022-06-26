@@ -1,0 +1,52 @@
+.ol-map {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.ol-control {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.ol-full-screen {
+  top: 0.5em;
+  right: 0.5em;
+}
+
+
+.ol-overviewmap.ol-uncollapsible {
+  bottom: auto;
+  right: auto;
+  left: 0;
+  top: 0;
+}
+
+.ol-overviewmap:not(.ol-collapsed) {
+  border: 1px solid black;
+  width: 400px;
+  height: 300px;
+}
+
+.ol-overviewmap .ol-overviewmap-box {
+  border: 2px solid red;
+}
+
+.ol-overviewmap .ol-overviewmap-map{
+  width: 400px;
+  height: 300px;
+  display: none;
+}
+
+.ol-overviewmap:not(.ol-collapsed) .ol-overviewmap-map{
+  display: inline;
+}
+
+.ol-overviewmap:not(.ol-collapsed) button {
+  position: absolute;
+  bottom: auto;
+  right: auto;
+  left: 1px;
+  top: 1px;
+}
