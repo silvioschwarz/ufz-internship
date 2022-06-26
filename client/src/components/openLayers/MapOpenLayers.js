@@ -61,15 +61,17 @@ const MapOpenLayers = (props) => {
                 }),
               })}
               style={styles.Line}
-            />
+            />            
           )}
-          {props.showLayer2 && (
+              {props.showLayer1 && (
             <VectorLayer
               source={vector({
-                features: geojsonfeature
+                features: new GeoJSON().readFeatures(props.bbox, {
+                  featureProjection: get("EPSG:3857"),
+                }),
               })}
               style={styles.LineGreen}
-            />
+            />            
           )}
         </Layers>
         <Controls>
