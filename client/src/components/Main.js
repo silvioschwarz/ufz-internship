@@ -7,10 +7,11 @@ var osmtogeojson = require("osmtogeojson");
 
 export default function Main() {
   const [showLayer1, setShowLayer1] = React.useState(false);
+  const isMounted = React.useRef(false)
 
-  const [motorway, setMotorway] = React.useState(true);
-  const [trunk, setTrunk] = React.useState(true);
-  const [primary, setPrimary] = React.useState(true);
+  const [motorway, setMotorway] = React.useState(false);
+  const [trunk, setTrunk] = React.useState(false);
+  const [primary, setPrimary] = React.useState(false);
 
   const [roadTypes, setRoadTypes] = React.useState([]);
 
@@ -18,20 +19,33 @@ export default function Main() {
 
   const bbox = [52.4, 13.25, 52.6, 13.4];
 
-  React.useEffect(()=>{
-    
-  },[])
-
   function handleRoadTypes(){
     let roads = Array.from(document.querySelectorAll(
       '#roadTypes input[type="checkbox"]:checked'
     )).map((road) => {
+
+      if(road.value==="motorway"){
+        setMotorway(true)
+      }
+
+      if(road.value==="trunk"){
+        setTrunk(true)
+      }
+
+      if(road.value==="primary"){
+        setPrimary(true)
+      }
+
+
       return(road.value)
     });
 
     setRoadTypes(roads)
 
-    setMotorway(prevState => !prevState)
+   
+
+
+    // setMotorway(prevState => !prevState)
     // setTrunk(prevState => !prevState)
     // setPrimary(prevState => !prevState)
     };
@@ -59,6 +73,7 @@ export default function Main() {
   console.log(query)
 
   React.useEffect(() => {
+    setShowLayer1(false)
     fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
       body: query,
@@ -76,7 +91,7 @@ export default function Main() {
         });
         console.log(geojson);
         setGeoJSONObject(geojson);
-        setShowLayer1((prevState) => !prevState);
+        setShowLayer1(true)
       })
       .catch((error) => {
         console.error(
@@ -85,6 +100,14 @@ export default function Main() {
         );
       });
   }, [roadTypes]);
+
+  // React.useEffect(()=>{
+  //   if(isMounted.current){
+  //     setGeoJSONObject(geojson);
+  //   } else {
+  //     isMounted.current=true;
+  //   }
+  // },[geoJSONObject])
 
   // function handleDatum() {
   //   let newDatum = document.getElementById("test-date2").value;
