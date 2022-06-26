@@ -15,7 +15,7 @@ export default function Main() {
 
   const [roadTypes, setRoadTypes] = React.useState([]);
 
-  const [geoJSONObject, setGeoJSONObject] = React.useState([]);
+  const [geoJSONObject, setGeoJSONObject] = React.useState(false);
 
   const bbox = [52.4, 13.25, 52.6, 13.4];
 
@@ -73,6 +73,7 @@ export default function Main() {
   console.log(query)
 
   React.useEffect(() => {
+    if(isMounted.current){
     setShowLayer1(false)
     fetch("https://overpass-api.de/api/interpreter", {
       method: "POST",
@@ -99,6 +100,9 @@ export default function Main() {
           error
         );
       });
+    } else {
+      isMounted.current = true;
+    }
   }, [roadTypes]);
 
   // React.useEffect(()=>{
@@ -154,7 +158,7 @@ export default function Main() {
               checked={showLayer1}
               onChange={(event) => setShowLayer1(event.target.checked)}
             />{" "}
-            Show Path 1
+            Show Roads
           </div>
           <div>
             <input type="file" />

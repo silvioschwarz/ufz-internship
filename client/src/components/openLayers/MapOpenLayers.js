@@ -53,7 +53,7 @@ const MapOpenLayers = (props) => {
       <Map center={fromLonLat(center)} zoom={zoom}>
         <Layers>
           <TileLayer source={osm()} zIndex={0} />
-          {props.showLayer1 && (
+          {(props.showLayer1 && props.data) && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.data, {
@@ -63,7 +63,7 @@ const MapOpenLayers = (props) => {
               style={styles.Line}
             />            
           )}
-              {props.showLayer1 && (
+              {(props.showLayer1 && props.data) && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.bbox, {
