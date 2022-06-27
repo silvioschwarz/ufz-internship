@@ -8,12 +8,11 @@ import BeatLoader from "react-spinners/BeatLoader";
 // import styled, { css } from "styled-components";
 // import "../css/loader.css";
 
-
-// const ConditionalWrapper = ({ condition, wrapper, children }) => 
+// const ConditionalWrapper = ({ condition, wrapper, children }) =>
 //   condition ? wrapper(children) : children;
 
-
-const osmtogeojson = require('osmtogeojson');
+// const osmtogeojson = require('osmtogeojson');
+const osm2geojson = require("osm2geojson-lite");
 
 export default function Main() {
   const [showLayer1, setShowLayer1] = React.useState(false);
@@ -31,6 +30,10 @@ export default function Main() {
   const bbox = [52.4, 13.25, 52.6, 13.4];
 
   function handleRoadTypes() {
+    setMotorway(false);
+    setPrimary(false);
+    setTrunk(false);
+
     let roads = Array.from(
       document.querySelectorAll('#roadTypes input[type="checkbox"]:checked')
     ).map((road) => {
@@ -60,7 +63,7 @@ export default function Main() {
 
   let query = "data=";
   query += `[bbox:${bbox.join(",")}]`;
-  query += "[out:json][timeout:25];";
+  query += "[out:xml][timeout:25];";
   query += "(";
 
   roadTypes.map((road) => {
@@ -87,16 +90,21 @@ export default function Main() {
         body: query,
       })
         .then((res) => {
-          console.log(res);
+          // console.log(res);
+
           if (!res.ok) {
             throw new Error("Network response was not OK");
+          } else {
+            console.log("fetched!");
           }
-          return res.json();
+          return res.text();
         })
-        .then((json) => {
-          console.log(json)
-          const geojson = osmtogeojson(json);
+        .then((data) => {
+          // console.log(data)
+          let geojson = osm2geojson(data, {});
           console.log(geojson);
+          // const geojson = osmtogeojson(data);
+          // console.log(geojson);
           setGeoJSONObject(geojson);
           setShowLayer1(true);
           setLoaded(true);
@@ -153,18 +161,27 @@ export default function Main() {
     <main>
       <p>Main Content</p>
       <div className="main-content">
-       
-            <MapOpenLayers
-              showLayer1={showLayer1}
-              data={geoJSONObject}
-              bbox={bboxObject}
-            /> 
-            <div className="selection-div">
-            {!loaded && <div className="loading-div">
+        <MapOpenLayers
+          showLayer1={showLayer1}
+          data={geoJSONObject}
+          bbox={bboxObject}
+        />
+        <div className="selection-div">
+          {!loaded && (
+            <div className="loading-div">
               <BeatLoader />
-            </div>}   
+            </div>
+          )}
 
-            <aside>
+          <aside>
+            <h3>Plan optimal route</h3>
+            <div>
+              <h4>Input Segmentation File</h4>
+              <input type="file" />
+              <hr></hr>
+            </div>
+            <div id="roadTypes">
+              <h4>Road Types</h4>
               <div>
                 <input
                   type="checkbox"
@@ -173,46 +190,46 @@ export default function Main() {
                 />{" "}
                 Show Roads
               </div>
-              <div>
-                <input type="file" />
-                <hr></hr>
-              </div>
-              <div id="roadTypes">
-                <h4>Road Types</h4>
-                <input
-                  type="checkbox"
-                  id="motorway"
-                  name="motorway"
-                  value="motorway"
-                  checked={motorway}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="motorway"> motorway</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="trunk"
-                  name="trunk"
-                  value="trunk"
-                  checked={trunk}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="trunk"> trunk</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="primary"
-                  name="primary"
-                  value="primary"
-                  checked={primary}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="primary"> primary</label>
-                <br />
-              </div>
-            </aside>
-
+              <hr />
+              <input
+                type="checkbox"
+                id="motorway"
+                name="motorway"
+                value="motorway"
+                checked={motorway}
+                onChange={handleRoadTypes}
+              />
+              <label htmlFor="motorway"> motorway</label>
+              <br />
+              <input
+                type="checkbox"
+                id="trunk"
+                name="trunk"
+                value="trunk"
+                checked={trunk}
+                onChange={handleRoadTypes}
+              />
+              <label htmlFor="trunk"> trunk</label>
+              <br />
+              <input
+                type="checkbox"
+                id="primary"
+                name="primary"
+                value="primary"
+                checked={primary}
+                onChange={handleRoadTypes}
+              />
+              <label htmlFor="primary"> primary</label>
+              <br />
+              <hr />
             </div>
+            <div>
+              <h4>Calculation</h4>
+              <h4>Choose output</h4>
+              <input type="file" />
+            </div>
+          </aside>
+        </div>
 
         {/* <Sidebar /> */}
       </div>
