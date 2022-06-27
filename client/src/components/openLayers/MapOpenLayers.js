@@ -9,7 +9,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import { getCenter } from "ol/extent";
 import {getArea, getLength} from 'ol/sphere';
 
-import { Controls, FullScreenControl, OverviewMapControl } from "./Controls";
+import { Controls, FullScreenControl, OverviewMapControl, ZoomControl } from "./Controls";
 
 
 // attributation: https://github.com/mbrown3321/openlayers-react-map
@@ -76,6 +76,7 @@ const MapOpenLayers = (props) => {
         </Layers>
         <Controls>
           <FullScreenControl />
+          <ZoomControl />
           <OverviewMapControl source={osm()} />
         </Controls>
       </Map>
