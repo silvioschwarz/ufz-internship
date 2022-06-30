@@ -63,16 +63,30 @@ footer {
 }
 
 aside{
-  width: 100%;
+  width: 100%;  
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  row-gap: 1%;
   position: absolute;
   padding: 10px;
   background-color: lightgray; 
   border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  row-gap: 1%; 
+  font-size: 1.5vh;
+  overflow-y: scroll; 
 }
+
+.roadtypes{
+  overflow-y: scroll;
+  max-height: 70px;
+}
+
+/* @media (max-height:800px){
+  aside{
+    font-size: 0.8vh;
+  }
+} */
+
 
 .loading-div{
   width: 100%;

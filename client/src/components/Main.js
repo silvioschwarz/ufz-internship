@@ -175,108 +175,122 @@ export default function Main() {
 
           {/* <h3>Plan optimal route</h3> */}
           <aside>
-            {/* <fieldset>
+            <div className="aside-child">
+              {/* <fieldset>
               <legend>
                 <h3>Plan optimal route</h3>
               </legend> */}
-            <fieldset>
-              <legend>
-                <h4>Input Segmentation</h4>
-              </legend>
-              {/* <button
+              <fieldset>
+                <legend>
+                  <h4>Input Segmentation</h4>
+                </legend>
+                {/* <button
                 style={{display:"block"}}
-                onClick={document.getElementById("getFile").click}
+                onClick={document.getElementById("getFile").click()}
                 
               >
                 Load Segmentation
               </button>
               <input type="file" id="getFile" style={{display:"none"}} /> */}
-              <input type="file" />
-              <select id="EPSG" name="EPSG">
-                <option>EPSG</option>
-                <option disabled>_________</option>
-                <option>4326</option>
-                <option>35644764</option>
-                <option>4</option>
-                <option>4446</option>
-              </select>
-              <br />
-              <input type="checkbox" /> Show Segmentation
-            </fieldset>
-            <fieldset>
-              <legend>
-                <h4>Input Road network</h4>
-              </legend>
-              <fieldset>
-                <input type="radio" name="roadNetwork" /> use default
+                <input type="button" value="upload Segmentation" /><br/>
+                <select id="EPSG" name="EPSG">
+                  <option>EPSG</option>
+                  <option disabled>_________</option>
+                  <option>4326</option>
+                  <option>35644764</option>
+                  <option>4</option>
+                  <option>4446</option>
+                </select>
                 <br />
-                <input type="radio" name="roadNetwork" /> use own road network
+                <input type="checkbox" /> Show Segmentation
               </fieldset>
-              <input type="file" />
-              <input
-                type="checkbox"
-                checked={showLayer1}
-                onChange={(event) => setShowLayer1(event.target.checked)}
-              />{" "}
-              Show Road Network
-              <fieldset>
-                <legend>Select Roads to show</legend>
-                <input
-                  type="checkbox"
-                  id="motorway"
-                  name="motorway"
-                  value="motorway"
-                  checked={motorway}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="motorway"> motorway</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="trunk"
-                  name="trunk"
-                  value="trunk"
-                  checked={trunk}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="trunk"> trunk</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="primary"
-                  name="primary"
-                  value="primary"
-                  checked={primary}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="primary"> primary</label>
-              </fieldset>
-            </fieldset>
-            <fieldset>
-              <legend>
-                <h4>Find Optimal Route</h4>
-              </legend>
-              <fieldset>
-                <input type="radio" name="criteria1" /> Best points per cluster
-                <br />
-                <input type="radio" name="criteria1" /> Best road segment per cluster
-              </fieldset>
-              <fieldset>
-                <input type="radio" name="criteria2" /> Find a loop
-                <br />
-                <input type="radio" name="criteria2" /> Define Start/End
-              </fieldset>
-              <button>Start calc</button>
-            </fieldset>
-            <fieldset>
-              <legend>
-                <h4>Export</h4>
-              </legend>
-              <button type="button">Save Route</button>
-              <button type="button">Save Image</button>
+            </div>
 
-              {/* <input type="button" >Save Route</input> */}
-            </fieldset>
+            <div className="aside-child">
+              <fieldset>
+                <legend>
+                  <h4>Input Road network</h4>
+                </legend>
+                <fieldset>
+                  <input type="radio" name="roadNetwork" /> use default
+                  <br />
+                  <input type="radio" name="roadNetwork" /> use own road network
+                </fieldset>
+                <input type="button" value="upload road network"/><br/>
+                <input
+                  type="checkbox"
+                  checked={showLayer1}
+                  onChange={(event) => setShowLayer1(event.target.checked)}
+                />{" "}
+                Show Road Network
+                <fieldset className="roadTypes">
+                  <legend>Select Roads to show</legend>
+                  <input
+                    type="checkbox"
+                    id="motorway"
+                    name="motorway"
+                    value="motorway"
+                    checked={motorway}
+                    onChange={handleRoadTypes}
+                  />
+                  <label htmlFor="motorway"> motorway</label>
+                  <br />
+                  <input
+                    type="checkbox"
+                    id="trunk"
+                    name="trunk"
+                    value="trunk"
+                    checked={trunk}
+                    onChange={handleRoadTypes}
+                  />
+                  <label htmlFor="trunk"> trunk</label>
+                  <br />
+                  <input
+                    type="checkbox"
+                    id="primary"
+                    name="primary"
+                    value="primary"
+                    checked={primary}
+                    onChange={handleRoadTypes}
+                  />
+                  <label htmlFor="primary"> primary</label>
+                </fieldset>
+              </fieldset>
+            </div>
+
+            <div className="aside-child">
+              <fieldset>
+                <legend>
+                  <h4>Find Optimal Route</h4>
+                </legend>
+                <fieldset>
+                  <input type="radio" name="criteria1" /> Best points per
+                  cluster
+                  <br />
+                  <input type="radio" name="criteria1" /> Best road segment per
+                  cluster
+                </fieldset>
+                <fieldset>
+                  <input type="radio" name="criteria2" /> Find a loop
+                  <br />
+                  <input type="radio" name="criteria2" /> Define Start/End
+                </fieldset>
+                <button>Start calc</button>
+              </fieldset>
+            </div>
+
+            <div className="aside-child">
+              <fieldset>
+                <legend>
+                  <h4>Export</h4>
+                </legend>
+                <button type="button">Save Route</button>
+                <button type="button">Save Image</button>
+
+                {/* <input type="button" >Save Route</input> */}
+              </fieldset>
+            </div>
+
             {/* 
               <div id="roadTypes">
                 <h4>Road Types</h4>
