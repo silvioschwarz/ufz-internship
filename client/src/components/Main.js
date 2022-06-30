@@ -159,7 +159,6 @@ export default function Main() {
 
   return (
     <main>
-      {/* <p>Main Content</p> */}
       <div className="main-content">
         <MapOpenLayers
           showLayer1={showLayer1}
@@ -173,35 +172,32 @@ export default function Main() {
             </div>
           )}
 
-          {/* <h3>Plan optimal route</h3> */}
           <aside>
             <div className="aside-child">
-              {/* <fieldset>
-              <legend>
-                <h3>Plan optimal route</h3>
-              </legend> */}
+
               <fieldset>
                 <legend>
-                  <h4>Input Segmentation</h4>
+                  Input Segmentation
                 </legend>
-                {/* <button
-                style={{display:"block"}}
-                onClick={document.getElementById("getFile").click()}
-                
-              >
-                Load Segmentation
-              </button>
-              <input type="file" id="getFile" style={{display:"none"}} /> */}
-                <input type="button" value="upload Segmentation" /><br/>
+
+                <div className="flexx-row">
+                <div className="mb-0 w-50">
+                  {/* <label htmlFor="formFile" className="form-label"></label> */}
+                  <input
+                    className="form-control form-control-sm"
+                    type="file"
+                    id="formFile"
+                  />
+                </div>
                 <select id="EPSG" name="EPSG">
-                  <option>EPSG</option>
+                  <option>Select EPSG</option>
                   <option disabled>_________</option>
                   <option>4326</option>
                   <option>35644764</option>
                   <option>4</option>
                   <option>4446</option>
                 </select>
-                <br />
+                </div>
                 <input type="checkbox" /> Show Segmentation
               </fieldset>
             </div>
@@ -209,14 +205,24 @@ export default function Main() {
             <div className="aside-child">
               <fieldset>
                 <legend>
-                  <h4>Input Road network</h4>
+                  Input Road network
                 </legend>
-                <fieldset>
+                <div className="flexx-row">
+                <fieldset  style={{ display: "inline" }}>
                   <input type="radio" name="roadNetwork" /> use default
                   <br />
                   <input type="radio" name="roadNetwork" /> use own road network
                 </fieldset>
-                <input type="button" value="upload road network"/><br/>
+                <br />
+                <div className="mb-0 w-50">
+                  <label htmlFor="formFile" className="form-label">Own road Network</label>
+                  <input
+                    className="form-control form-control-sm"
+                    type="file"
+                    id="formFile"
+                  />
+                </div>
+                </div>
                 <input
                   type="checkbox"
                   checked={showLayer1}
@@ -261,33 +267,46 @@ export default function Main() {
             <div className="aside-child">
               <fieldset>
                 <legend>
-                  <h4>Find Optimal Route</h4>
+                  Find Optimal Route
                 </legend>
-                <fieldset>
-                  <input type="radio" name="criteria1" /> Best points per
-                  cluster
-                  <br />
-                  <input type="radio" name="criteria1" /> Best road segment per
-                  cluster
-                </fieldset>
-                <fieldset>
+                <div className="flexx-row">
+                  <fieldset className="w-75" style={{ display: "inline" }}>
+                    <input type="radio" name="criteria1" /> Best points
+                    <br />
+                    <input type="radio" name="criteria1" /> Best road segments
+                  </fieldset>
+                  <div>                   
+                    Length of Segment (km): <br></br>
+                    <input className="w-75" type="number" />
+                     </div>
+                </div>
+                <div  className="flexx-row">
+                <fieldset className="w-50" style={{ display: "inline" }}>
                   <input type="radio" name="criteria2" /> Find a loop
                   <br />
                   <input type="radio" name="criteria2" /> Define Start/End
                 </fieldset>
-                <button>Start calc</button>
+                <div className="w-50">
+                  Start coordinates:<br/> <input className="w-50" type="number" placeholder="Easting"></input><input className="w-50" type="number" placeholder="Northing"></input> <br/>
+                  End coordinates:<br/> <input className="w-50" type="number" placeholder="Easting"></input><input className="w-50" type="number" placeholder="Northing"></input>
+                </div>
+                </div>
+                Desired route length (km):<br/> <input  className="w-50" type="number"></input>
+                <button className="m-1">Start calc</button>
               </fieldset>
             </div>
 
             <div className="aside-child">
               <fieldset>
                 <legend>
-                  <h4>Export</h4>
+                  Export
                 </legend>
-                <button type="button">Save Route</button>
-                <button type="button">Save Image</button>
-
-                {/* <input type="button" >Save Route</input> */}
+                <button className="m-2" type="button">
+                  Save Route
+                </button>
+                <button className="m-2" type="button">
+                  Save Image
+                </button>
               </fieldset>
             </div>
 
@@ -340,7 +359,6 @@ export default function Main() {
                 <h4>Choose output</h4>
                 <input type="file" />
               </div> */}
-            {/* </fieldset> */}
           </aside>
         </div>
 
