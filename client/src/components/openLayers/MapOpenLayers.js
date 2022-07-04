@@ -7,10 +7,14 @@ import { osm, vector } from "./Source";
 import { fromLonLat, get, transform } from "ol/proj";
 import GeoJSON from "ol/format/GeoJSON";
 import { getCenter } from "ol/extent";
-import {getArea, getLength} from 'ol/sphere';
+import { getArea, getLength } from "ol/sphere";
 
-import { Controls, FullScreenControl, OverviewMapControl, ZoomControl } from "./Controls";
-
+import {
+  Controls,
+  FullScreenControl,
+  OverviewMapControl,
+  ZoomControl,
+} from "./Controls";
 
 // attributation: https://github.com/mbrown3321/openlayers-react-map
 
@@ -45,6 +49,7 @@ let styles = {
 };
 
 const MapOpenLayers = (props) => {
+  console.log(props)
   const [center, setCenter] = useState([13.37, 52.5]);
   const [zoom, setZoom] = useState(11);
 
@@ -53,7 +58,7 @@ const MapOpenLayers = (props) => {
       <Map center={fromLonLat(center)} zoom={zoom}>
         <Layers>
           <TileLayer source={osm()} zIndex={0} />
-          {(props.showLayer1 && props.data) && (
+          {props.showLayer1 && props.data && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.data, {
@@ -61,9 +66,9 @@ const MapOpenLayers = (props) => {
                 }),
               })}
               style={styles.Line}
-            />            
+            />
           )}
-              {(props.showLayer1 && props.data) && (
+          {props.showLayer1 && props.data && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.bbox, {
@@ -71,7 +76,19 @@ const MapOpenLayers = (props) => {
                 }),
               })}
               style={styles.LineGreen}
-            />            
+              zIndex={1}
+            />
+          )}
+            {props.showSegmentation && props.dataSegmentation && (
+            <VectorLayer
+            source={vector({
+              features: new GeoJSON().readFeatures(props.dataSegmentation, {
+                featureProjection: get("EPSG:3857"),
+              }),
+            })}
+            style={styles.LineGreen}
+            zIndex={1}
+          />
           )}
         </Layers>
         <Controls>

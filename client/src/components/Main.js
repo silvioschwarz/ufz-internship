@@ -5,6 +5,7 @@ import Sidebar from "./Sidebar";
 
 import BeatLoader from "react-spinners/BeatLoader";
 
+import data from '../data/berlin_bezirke.json';
 // import styled, { css } from "styled-components";
 // import "../css/loader.css";
 
@@ -16,6 +17,10 @@ const osm2geojson = require("osm2geojson-lite");
 
 export default function Main() {
   const [showLayer1, setShowLayer1] = React.useState(false);
+  const [showSegmentation, setShowSegmentation] = React.useState(false);
+  const [dataSegmentation, setDataSegmentation] = React.useState( require("../data/berlin_bezirke.json"));
+
+
   const [loaded, setLoaded] = React.useState(true);
   const isMounted = React.useRef(false);
 
@@ -125,6 +130,21 @@ export default function Main() {
   }, [roadTypes]);
 
   // React.useEffect(()=>{
+  //   if (isMounted.current) {
+  //     setLoaded(false);
+  //     setShowSegmentation(false);
+
+  //     setDataSegmentation(data)
+  //     setLoaded(true);
+  //     setShowSegmentation(true);
+
+  //   } else {
+  //     isMounted.current = true;
+  //   }
+
+  // },[dataSegmentation])
+
+  // React.useEffect(()=>{
   //   if(isMounted.current){
   //     setGeoJSONObject(geojson);
   //   } else {
@@ -167,6 +187,8 @@ export default function Main() {
         <MapOpenLayers
           showLayer1={showLayer1}
           data={geoJSONObject}
+          showSegmentation={showSegmentation}
+          dataSegmentation={dataSegmentation}
           bbox={bboxObject}
         />
         <div className="selection-div">
@@ -202,7 +224,12 @@ export default function Main() {
                   <option>4446</option>
                 </select>
                 </div>
-                <input type="checkbox" /> Show Segmentation
+                <input
+                  type="checkbox"
+                  checked={showSegmentation}
+                  onChange={(event) => setShowSegmentation(event.target.checked)}
+                />{" "}
+                Show Segementation
               </fieldset>
             </div>
 
@@ -313,56 +340,6 @@ export default function Main() {
                 </button>
               </fieldset>
             </div>
-
-            {/* 
-              <div id="roadTypes">
-                <h4>Road Types</h4>
-                <div>
-                  <input
-                    type="checkbox"
-                    checked={showLayer1}
-                    onChange={(event) => setShowLayer1(event.target.checked)}
-                  />{" "}
-                  Show Roads
-                </div>
-                <hr />
-                <input
-                  type="checkbox"
-                  id="motorway"
-                  name="motorway"
-                  value="motorway"
-                  checked={motorway}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="motorway"> motorway</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="trunk"
-                  name="trunk"
-                  value="trunk"
-                  checked={trunk}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="trunk"> trunk</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="primary"
-                  name="primary"
-                  value="primary"
-                  checked={primary}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="primary"> primary</label>
-                <br />
-                <hr />
-              </div>
-              <div>
-                <h4>Calculation</h4>
-                <h4>Choose output</h4>
-                <input type="file" />
-              </div> */}
           </aside>
         </div>
 
