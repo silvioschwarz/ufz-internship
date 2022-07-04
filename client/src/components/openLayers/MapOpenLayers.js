@@ -22,7 +22,7 @@ let styles = {
   MultiPolygon: new Style({
     stroke: new Stroke({
       color: "blue",
-      width: 1,
+      width: 2,
     }),
     fill: new Fill({
       color: "rgba(0, 0, 255, 0.1)",
@@ -31,7 +31,7 @@ let styles = {
   Line: new Style({
     stroke: new Stroke({
       color: "red",
-      width: 5,
+      width: 2,
     }),
     fill: new Fill({
       color: "rgba(0, 0, 255, 0.1)",
@@ -86,7 +86,7 @@ const MapOpenLayers = (props) => {
                 featureProjection: get("EPSG:3857"),
               }),
             })}
-            style={styles.LineGreen}
+            style={styles.MultiPolygon}
             zIndex={1}
           />
           )}

@@ -52,12 +52,12 @@ footer {
 
 .map-container{
   background-color: aquamarine;
-  width: 65%;
+  width: 70%;
   max-height: 100%;
 }
 
 .selection-div{
-  width: 35%;
+  width: 30%;
   height: 100%;
   position: relative;
 }
@@ -67,18 +67,27 @@ aside{
   height: 100%;
   position: absolute;
   padding: 10px;
-  background-color: lightgray; 
+  /* background-color: lightgray;  */
   border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  row-gap: 1%; 
-  font-size: 1.5vh;
-  overflow-y: scroll; 
+  border: solid black 1px;
 }
 
-input[type='file']{
-  font-size: 1vh;
+.nav-item{
+  background-color: lightcoral;
+  border-radius: 10px 10px 0 0px;
 }
+
+.nav-item  .nav-link.active {
+  background-color: lightyellow;
+}
+
+.nav-item  .nav-link.done {
+  background-color: lightgreen;
+}
+
+/* input[type='file']{
+ 
+} */
 
 /* .fileUpload {
   position: relative;
