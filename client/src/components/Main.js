@@ -30,12 +30,12 @@ export default function Main() {
   const bbox = [52.4, 13.25, 52.6, 13.4];
 
   function handleRoadTypes() {
-    setMotorway(false);
-    setPrimary(false);
-    setTrunk(false);
+    // setMotorway(false);
+    // setPrimary(false);
+    // setTrunk(false);
 
     let roads = Array.from(
-      document.querySelectorAll('#roadTypes input[type="checkbox"]:checked')
+      document.querySelectorAll('.roadTypes input[type="checkbox"]:checked')
     ).map((road) => {
       if (road.value === "motorway") {
         setMotorway(true);
@@ -51,6 +51,7 @@ export default function Main() {
 
       return road.value;
     });
+    console.log(roads)
 
     setRoadTypes(roads);
 
@@ -59,38 +60,41 @@ export default function Main() {
     // setPrimary(prevState => !prevState)
   }
 
-  console.log(roadTypes);
-
-  let query = "data=";
-  query += `[bbox:${bbox.join(",")}]`;
-  query += "[out:xml][timeout:25];";
-  query += "(";
-
-  roadTypes.map((road) => {
-    query += `way["highway"=${road}];`;
-  });
-  // query += 'way["highway"="motorway"];';
-  // query += 'node["leisure"]["access"!="private"]["sport"="swimming"];'
-  // query += 'node["access"!="private"]["leisure"="swimming_pool"];'
-  // query += 'way["leisure"]["access"!="private"]["sport"="swimming"];'
-  // query += 'way["access"!="private"]["leisure"="swimming_pool"];'
-  // query += 'relation["leisure"]["access"!="private"]["sport"="swimming"];'
-  // query += 'relation["access"!="private"]["leisure"="swimming_pool"];'
-  query += ")";
-  query += ";out geom;>;";
-
-  console.log(query);
+  
 
   React.useEffect(() => {
     if (isMounted.current) {
       setLoaded(false);
       setShowLayer1(false);
+
+      console.log(roadTypes);
+
+      let query = "data=";
+      query += `[bbox:${bbox.join(",")}]`;
+      query += "[out:xml][timeout:25];";
+      query += "(";
+    
+      roadTypes.map((road) => {
+        query += `way["highway"=${road}];`;
+      });
+      // query += 'way["highway"="motorway"];';
+      // query += 'node["leisure"]["access"!="private"]["sport"="swimming"];'
+      // query += 'node["access"!="private"]["leisure"="swimming_pool"];'
+      // query += 'way["leisure"]["access"!="private"]["sport"="swimming"];'
+      // query += 'way["access"!="private"]["leisure"="swimming_pool"];'
+      // query += 'relation["leisure"]["access"!="private"]["sport"="swimming"];'
+      // query += 'relation["access"!="private"]["leisure"="swimming_pool"];'
+      query += ")";
+      query += ";out geom;>;";
+    
+      console.log(query);
+
       fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
         body: query,
       })
         .then((res) => {
-          // console.log(res);
+          console.log(res);
 
           if (!res.ok) {
             throw new Error("Network response was not OK");
@@ -100,7 +104,7 @@ export default function Main() {
           return res.text();
         })
         .then((data) => {
-          // console.log(data)
+          console.log(data)
           let geojson = osm2geojson(data, {});
           console.log(geojson);
           // const geojson = osmtogeojson(data);
