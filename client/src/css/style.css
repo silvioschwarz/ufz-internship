@@ -34,12 +34,8 @@ nav {
 main{
   margin:  1% 1% 1%  1%;
   max-height: 850px;
-}
-
-.main-content {
   display: flex;
   flex-direction: row;
-  height: 100%;
   column-gap: 2%;
 }
 

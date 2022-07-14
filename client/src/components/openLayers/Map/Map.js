@@ -46,7 +46,7 @@ const Map = ({ children, zoom, center, extent, padding}) => {
 
 		map.getView().fit(extent, {
 			size: map.getSize(),
-			padding: padding,
+			padding: [150, 150, 150, 150],
 		  })
 	}, [extent])
 
