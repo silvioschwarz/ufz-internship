@@ -198,6 +198,7 @@ export default function Main() {
 
 
 
+
   React.useEffect(() => {
     // if (isMounted.current) {
     if (isSelected) {
@@ -205,15 +206,48 @@ export default function Main() {
 
       selectedFile.text().then((res) => {
           const data = csvToArray(res);
-          // console.log(data);
+          console.log("hier")
+
+          const lons= [...new Set(data.map(item => item.Longitude))].sort()
+          const lats= [...new Set(data.map(item => item.Latitude))].sort()
+          let width = lats.length
+          let height = lons.length
+          let xIntervall = (Math.max(...lats)-Math.min(...lats)) /(width-1)
+          let yIntervall = (Math.max(...lons)-Math.min(...lons)) /(height-1)
+
+          // let xIntervall = lons[1] - Math.min(...lons)
+          // let yIntervall = lats[1] - Math.min(...lats)
+          let xMin = Math.min(...lats)
+          let xMax = Math.max(...lats)
+          let yMin = Math.min(...lons)
+          let yMax = Math.max(...lons)
+
+          console.log([0,((xMax-xMin)/xIntervall),0,(yMin-yMax)/-yIntervall])
+
+
+
+          
+          console.log(width)
+          console.log(height)
+          console.log(xIntervall)
+          console.log(yIntervall)
+          // console.log(lats.slice(1).map(function(n,i){return n-lats[i]}))
+          // console.log(lons.slice(1).map(function(n,i){return n-lons[i]}))
   
           let segData = [];
-  
+
           const temp = data.map((element) => {
   
             let { Latitude: lat, Longitude: lon, ...propers } = element;
+            let x = (lat -xMin) /xIntervall
+            let y = (lon -yMax) /-yIntervall
+
+            let index = y*(width+1)+x
+
+
+            let maxClass = Object.values(propers).map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
   
-            //   console.log(element)
+              console.log()
             segData.push({
               type: "Feature",
               geometry: {
@@ -222,12 +256,18 @@ export default function Main() {
               },
               properties: {
                 ...propers,
+                maxClass: maxClass,
+                index:index,
+                x:x,
+                y:y
               },
             });
   
             setSegmentationData({
               type: "FeatureCollection",
               features: segData,
+              height:height,
+                width:width
             });
           });
         });
