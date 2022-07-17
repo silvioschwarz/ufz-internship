@@ -31,6 +31,10 @@ import {
 } from "./Controls";
 import ImageSource from "ol/source/Image";
 
+let colormap = require('colormap')
+
+
+
 // attributation: https://github.com/mbrown3321/openlayers-react-map
 
 let styles = {
@@ -135,6 +139,16 @@ const MapOpenLayers = (props) => {
     const ctx = canvas.getContext("2d");
     const imageData = ctx.createImageData(width, height);
 
+    let colors = colormap({
+      colormap: 'jet',
+      nshades: props.segmentationData.numClasses,
+      format: 'rba',
+      alpha: 1
+  })
+
+  console.log("colormap")
+  console.log(colors)
+
 
     for (let i = 0; i < imageData.data.length; i += 4) {
       // Modify pixel data
@@ -152,9 +166,9 @@ const MapOpenLayers = (props) => {
       // console.log("index")
       // console.log(index)
 
-      imageData.data[index + 0] = 0; // R value
-      imageData.data[index + 1] = 0; // G value
-      imageData.data[index + 2] = 0; // B value
+      imageData.data[index + 0] = colors[element.properties.maxClass][0]; // R value
+      imageData.data[index + 1] = colors[element.properties.maxClass][1]; // G value
+      imageData.data[index + 2] = colors[element.properties.maxClass][2]; // B value
       imageData.data[index + 3] = 255; // getRandomInt(255);  // A value
     });
     // Draw image data to the canvas

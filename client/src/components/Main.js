@@ -207,6 +207,7 @@ export default function Main() {
       selectedFile.text().then((res) => {
           const data = csvToArray(res);
           console.log("hier")
+          console.log(Object.keys(data[0]).length)
 
           const lons= [...new Set(data.map(item => item.Longitude))].sort()
           const lats= [...new Set(data.map(item => item.Latitude))].sort()
@@ -222,15 +223,15 @@ export default function Main() {
           let yMin = Math.min(...lons)
           let yMax = Math.max(...lons)
 
-          console.log([0,((xMax-xMin)/xIntervall),0,(yMin-yMax)/-yIntervall])
+          // console.log([0,((xMax-xMin)/xIntervall),0,(yMin-yMax)/-yIntervall])
 
-
+          let numClasses = Object.keys(data[0]).length -2
 
           
-          console.log(width)
-          console.log(height)
-          console.log(xIntervall)
-          console.log(yIntervall)
+          // console.log(width)
+          // console.log(height)
+          // console.log(xIntervall)
+          // console.log(yIntervall)
           // console.log(lats.slice(1).map(function(n,i){return n-lats[i]}))
           // console.log(lons.slice(1).map(function(n,i){return n-lons[i]}))
   
@@ -242,12 +243,11 @@ export default function Main() {
             let x = (lat -xMin) /xIntervall
             let y = (lon -yMax) /-yIntervall
 
-            let index = y*(width+1)+x
+            let index = y*(width)+x
 
 
             let maxClass = Object.values(propers).map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
-  
-              console.log()
+
             segData.push({
               type: "Feature",
               geometry: {
@@ -266,6 +266,7 @@ export default function Main() {
             setSegmentationData({
               type: "FeatureCollection",
               features: segData,
+              numClasses: numClasses,
               height:height,
                 width:width
             });
