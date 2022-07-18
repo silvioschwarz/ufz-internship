@@ -31,9 +31,7 @@ import {
 } from "./Controls";
 import ImageSource from "ol/source/Image";
 
-let colormap = require('colormap')
-
-
+let colormap = require("colormap");
 
 // attributation: https://github.com/mbrown3321/openlayers-react-map
 
@@ -121,10 +119,11 @@ const MapOpenLayers = (props) => {
     var width = props.segmentationData.width;
     var height = props.segmentationData.height;
     var imgextent = [0, 0, width, height];
+
     var projection = new Projection({
-      code: 'xkcd-image',
-      units: 'pixels',
-      extent: extentIMG
+      code: "xkcd-image",
+      units: "pixels",
+      extent: extentIMG,
     });
 
     // console.log(height)
@@ -136,33 +135,33 @@ const MapOpenLayers = (props) => {
     var canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
+
     const ctx = canvas.getContext("2d");
     const imageData = ctx.createImageData(width, height);
 
     let colors = colormap({
-      colormap: 'jet',
+      colormap: "jet",
       nshades: props.segmentationData.numClasses,
-      format: 'rba',
-      alpha: 1
-  })
+      format: "rba",
+      alpha: 1,
+    });
 
-  console.log("colormap")
-  console.log(colors)
-
+    // console.log("colormap")
+    // console.log(colors)
 
     for (let i = 0; i < imageData.data.length; i += 4) {
       // Modify pixel data
-      imageData.data[i + 0] = 255;  // R value
-      imageData.data[i + 1] = 255;    // G value
-      imageData.data[i + 2] = 255;  // B value
-      imageData.data[i + 3] = 100;// getRandomInt(255);  // A value
+      imageData.data[i + 0] = 255; // R value
+      imageData.data[i + 1] = 255; // G value
+      imageData.data[i + 2] = 255; // B value
+      imageData.data[i + 3] = 100; // getRandomInt(255);  // A value
     }
 
-        props.segmentationData.features.map((element) => {
+    props.segmentationData.features.map((element) => {
       // console.log(element);
 
       // let index = element.properties.index*4;
-      const index = (element.properties.y* 430 +element.properties.x)*4
+      const index = (element.properties.y * width + element.properties.x) * 4;
       // console.log("index")
       // console.log(index)
 
@@ -173,14 +172,14 @@ const MapOpenLayers = (props) => {
     });
     // Draw image data to the canvas
 
-    // console.log(imageData.data)
+    console.log(imageData.data);
     ctx.putImageData(imageData, 0, 0);
     var dataURL = canvas.toDataURL();
 
     var sourceImage = new Static({
       url: dataURL,
-      projection:   projection,
-      imageExtent: extentIMG
+      projection: projection,
+      imageExtent: extentIMG,
     });
   }
 
@@ -199,7 +198,7 @@ const MapOpenLayers = (props) => {
         <Layers>
           <TileLayer source={osm()} zIndex={0} />
           {props.showSegmentation && <ImageLayer source={sourceImage} />}
-           {props.showLayer1  && (
+          {/* {props.showLayer1  && (
           <VectorLayer
               source={vector({
                 features: new GeoJSON({
@@ -209,8 +208,8 @@ const MapOpenLayers = (props) => {
               })}
               style={[styles.Point,styles.Point2,styles.Point,styles.Point2]}
             />
-          )}
-{/*
+          )} */}
+          {/*
           {props.showLayer1 && props.data && (
             <VectorLayer
               source={vector({

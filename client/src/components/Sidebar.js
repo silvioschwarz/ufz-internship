@@ -78,14 +78,14 @@ export default function Sidebar(props) {
                   }
                 />{" "}
                 Show Segmentation
-                <input
+                {/* <input
                   type="checkbox"
                   checked={props.showLayer1}
                   onChange={(event) =>
                     props.setShowLayer1(event.target.checked)
                   }
                 />{" "}
-                show GeoJSON
+                show GeoJSON */}
               </fieldset>
             </div>
           </div>
