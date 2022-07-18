@@ -177,7 +177,7 @@ const MapOpenLayers = (props) => {
       imageData.data[index + 0] = colors[element.properties.maxClass][0]; // R value
       imageData.data[index + 1] = colors[element.properties.maxClass][1]; // G value
       imageData.data[index + 2] = colors[element.properties.maxClass][2]; // B value
-      imageData.data[index + 3] = 255; // getRandomInt(255);  // A value
+      imageData.data[index + 3] = 100; // getRandomInt(255);  // A value
     });}
     else{
       props.segmentationData.features.map((element) => {
@@ -192,7 +192,7 @@ const MapOpenLayers = (props) => {
         imageData.data[index + 0] = 0; // R value
         imageData.data[index + 1] = 0; // G value
         imageData.data[index + 2] = 0; // B value
-        imageData.data[index + 3] = 0.5*255+element.properties.classes[props.segmentationClass]*255; // getRandomInt(255);  // A value
+        imageData.data[index + 3] = 0.5*255+0.5*element.properties.classes[props.segmentationClass]*255; // getRandomInt(255);  // A value
       });
   
     }
