@@ -162,6 +162,7 @@ export default function Main() {
   const changeHandler = (event) => {
     setSelectedFile(event.target.files[0]);
     setIsSelected(true);
+    // setShowSegmentation(true);
 
     // console.log(event.target.files[0].name);
 
@@ -270,6 +271,7 @@ export default function Main() {
               height:height,
                 width:width
             });
+            setShowSegmentation(true);
           });
         });
       }
