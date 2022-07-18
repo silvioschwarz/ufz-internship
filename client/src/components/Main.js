@@ -154,10 +154,12 @@ export default function Main() {
   const [selectedFile, setSelectedFile] = React.useState();
   const [isFilePicked, setIsFilePicked] = React.useState(false);
   const [isSelected, setIsSelected] = React.useState(false);
+  const [segmentationClass, setSegmentationClass] = React.useState("maxClass")
   const [segmentationData, setSegmentationData] = React.useState({
     type: "FeatureCollection",
     features: [],
   });
+  const [classes, setClasses]= React.useState([])
 
   const changeHandler = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -226,7 +228,13 @@ export default function Main() {
 
           // console.log([0,((xMax-xMin)/xIntervall),0,(yMin-yMax)/-yIntervall])
 
-          let numClasses = Object.keys(data[0]).length -2
+       
+          // setNumClasses(numClasses)
+
+          let segmentationClasses = Object.keys(data[0]).slice(2);
+          let numClasses = segmentationClasses.length
+          setClasses(segmentationClasses)
+
 
           
           // console.log(width)
@@ -248,7 +256,6 @@ export default function Main() {
 
 
             let maxClass = Object.values(propers).map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
-
             segData.push({
               type: "Feature",
               geometry: {
@@ -256,7 +263,7 @@ export default function Main() {
                 coordinates: [lat,lon],
               },
               properties: {
-                ...propers,
+                classes: propers,
                 maxClass: maxClass,
                 index:index,
                 x:x,
@@ -267,7 +274,7 @@ export default function Main() {
             setSegmentationData({
               type: "FeatureCollection",
               features: segData,
-              numClasses: numClasses,
+              classes: segmentationClasses,
               height:height,
                 width:width
             });
@@ -279,7 +286,7 @@ export default function Main() {
   }, [selectedFile]);
 
   function csvToArray(str, delimiter = ",") {
-    const rows = str.split("\n");
+    const rows = str.replace(/\r\n/g, "\n").split("\n");
     const headers = rows.shift().split(delimiter);
 
     const arr = rows.map(function (row) {
@@ -305,6 +312,7 @@ export default function Main() {
         data={geoJSONObject}
         showSegmentation={showSegmentation}
         segmentationData={segmentationData}
+        segmentationClass={segmentationClass}
         bbox={bboxObject}
       />
       <Sidebar
@@ -315,6 +323,8 @@ export default function Main() {
         setShowLayer1={setShowLayer1}
         showSegmentation={showSegmentation}
         setShowSegmentation={setShowSegmentation}
+        setSegmentationClass={setSegmentationClass}
+        classes={classes}
       />
     </main>
   );

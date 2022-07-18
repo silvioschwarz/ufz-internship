@@ -141,13 +141,18 @@ const MapOpenLayers = (props) => {
 
     let colors = colormap({
       colormap: "jet",
-      nshades: props.segmentationData.numClasses,
+      nshades: props.segmentationData.classes.length,
       format: "rba",
       alpha: 1,
     });
 
+    // let segmentationClasses = Object.keys(props.segmentationData.features[0].properties.classes);
+    // console.log(segmentationClasses)
+
     // console.log("colormap")
     // console.log(colors)
+
+    console.log(props.segmentationClass)
 
     for (let i = 0; i < imageData.data.length; i += 4) {
       // Modify pixel data
@@ -156,6 +161,10 @@ const MapOpenLayers = (props) => {
       imageData.data[i + 2] = 255; // B value
       imageData.data[i + 3] = 100; // getRandomInt(255);  // A value
     }
+
+    
+
+    if(props.segmentationClass =="maxClass"){
 
     props.segmentationData.features.map((element) => {
       // console.log(element);
@@ -169,7 +178,25 @@ const MapOpenLayers = (props) => {
       imageData.data[index + 1] = colors[element.properties.maxClass][1]; // G value
       imageData.data[index + 2] = colors[element.properties.maxClass][2]; // B value
       imageData.data[index + 3] = 255; // getRandomInt(255);  // A value
-    });
+    });}
+    else{
+      props.segmentationData.features.map((element) => {
+        // console.log("element")
+        // console.log(element.properties.classes[props.segmentationClass]);
+  
+        // let index = element.properties.index*4;
+        const index = (element.properties.y * width + element.properties.x) * 4;
+        // console.log("index")
+        // console.log(index)
+  
+        imageData.data[index + 0] = 0; // R value
+        imageData.data[index + 1] = 0; // G value
+        imageData.data[index + 2] = 0; // B value
+        imageData.data[index + 3] = 0.5*255+element.properties.classes[props.segmentationClass]*255; // getRandomInt(255);  // A value
+      });
+  
+    }
+
     // Draw image data to the canvas
 
     console.log(imageData.data);

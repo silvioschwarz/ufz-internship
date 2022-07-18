@@ -3,6 +3,11 @@ import BeatLoader from "react-spinners/BeatLoader";
 
 export default function Sidebar(props) {
 
+  const classElements = props.classes.map((item)=>{
+    // console.log(item)
+    return(<option key={item} value={item}>{item}</option>)
+  })
+
   return (
     <div className="selection-div">
       {!props.loaded && (
@@ -70,6 +75,19 @@ export default function Sidebar(props) {
                     <option>4446</option>
                   </select>
                 </div>
+                {props.selected && (
+                <select onChange={(event) =>{
+                  props.setShowSegmentation(false)
+                  props.setSegmentationClass(event.target.value)
+                  setTimeout(function(){props.setShowSegmentation(true)},500)           
+                }
+                }
+                  defaultValue={"maxClass"}
+                   id="Classes" name="Classes">
+                    <option value="maxClass">max Class</option>
+                    <option disabled>_________</option>
+                    {classElements}
+                  </select>)}
                 <input
                   type="checkbox"
                   checked={props.showSegmentation}
