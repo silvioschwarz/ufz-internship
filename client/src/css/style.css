@@ -71,11 +71,14 @@ aside{
 .nav-item{
   background-color: lightcoral;
   border-radius: 10px 10px 0 0px;
+  /* border: solid black 1pt; */
 }
 
 .nav-item  .nav-link.active {
+  border: solid blue 1pt;
   background-color: lightyellow;
 }
+
 
 .nav-item  .nav-link.done {
   background-color: lightgreen;

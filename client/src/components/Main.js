@@ -14,25 +14,84 @@ import data from "../data/berlin_bezirke.json";
 // const osmtogeojson = require('osmtogeojson');
 const osm2geojson = require("osm2geojson-lite");
 
+import {
+  fromLonLat,
+  get,
+  transform,
+  transformExtent,
+  Projection,
+} from "ol/proj";
+import GeoJSON from "ol/format/GeoJSON";
+import { vector } from "./openLayers/Source";
+import { extent } from "ol/extent";
+
+// import proj4 from "proj4";
+// import { register } from "ol/proj/proj4";
+
+// proj4.defs(
+//   "EPSG:31468",
+//   "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
+// );
+
+// register(proj4);
+
 export default function Main() {
-  const [showLayer1, setShowLayer1] = React.useState(false);
+  //MAP
+  const [center, setCenter] = React.useState([9.0, 52.5]);
+  const [zoom, setZoom] = React.useState(7);
+  const [extent, setExtent] = React.useState([
+    1212787.7209014362, 6733006.138551631, 1282450.298953579,
+    6780305.3349028155,
+  ]);
+
+  //Segmentation
+  const [isSegmentationSelected, setIsSegmentationSelected] =
+    React.useState(false);
+  const [segmentationFile, setSegmentationFile] = React.useState();
+  const [segmentationProjection, setSegmentationProjection] = React.useState();
+  const [segmentationData, setSegmentationData] = React.useState({
+    type: "FeatureCollection",
+    features: [],
+  });
   const [showSegmentation, setShowSegmentation] = React.useState(false);
-  const [dataSegmentation, setDataSegmentation] = React.useState(
+
+  const [segmentationClass, setSegmentationClass] = React.useState("maxClass");
+  const [classes, setClasses] = React.useState([]);
+
+  //ROAD NETWORK
+
+  const [useOSMRoadNetwork, setUseOSMRoadNetwork] = React.useState(true);
+
+  const [showRoadNetwork, setShowRoadNetwork] = React.useState(false);
+
+  const [roadNetwork, setRoadNetwork] = React.useState(
     require("../data/berlin_bezirke.json")
   );
 
-  const [loaded, setLoaded] = React.useState(true);
+  const [isRoadActive, setIsRoadActive] = React.useState(false);
+
+  const [isRoadLoaded, setIsRoadLoaded] = React.useState(false);
   const isMounted = React.useRef(false);
 
-  const [motorway, setMotorway] = React.useState(false);
-  const [trunk, setTrunk] = React.useState(false);
-  const [primary, setPrimary] = React.useState(false);
-
   const [roadTypes, setRoadTypes] = React.useState([]);
+  const [roadSelection, setRoadSelection] = React.useState([]);
 
   const [geoJSONObject, setGeoJSONObject] = React.useState(false);
 
-  const bbox = [52.4, 13.25, 52.6, 13.4];
+  // BoundingBox
+  const transformedExtent = transformExtent(extent, "EPSG:3857", "EPSG:4326");
+  // const bbox =[52.4, 13.25, 52.6, 13.4];
+
+  const bbox = [
+    transformedExtent[1].toFixed(3),
+    transformedExtent[0].toFixed(3),
+    transformedExtent[3].toFixed(3),
+    transformedExtent[2].toFixed(3),
+  ];
+
+  // Route
+  const [route, setRoute] = React.useState();
+  const [showRoute, setShowRoute] = React.useState(false);
 
   // function handleRoadTypes() {
   //   setMotorway(false);
@@ -65,67 +124,88 @@ export default function Main() {
   //   // setPrimary(prevState => !prevState)
   // }
 
-  // React.useEffect(() => {
-  //   if (isMounted.current) {
-  //     setLoaded(false);
-  //     setShowLayer1(false);
+  const roadNetworkHandler = (event) => {
 
-  //     console.log(roadTypes);
+  };
 
-  //     let query = "data=";
-  //     query += `[bbox:${bbox.join(",")}]`;
-  //     query += "[out:xml][timeout:25];";
-  //     query += "(";
+  
 
-  //     roadTypes.map((road) => {
-  //       query += `way["highway"=${road}];`;
-  //     });
-  //     // query += 'way["highway"="motorway"];';
-  //     // query += 'node["leisure"]["access"!="private"]["sport"="swimming"];'
-  //     // query += 'node["access"!="private"]["leisure"="swimming_pool"];'
-  //     // query += 'way["leisure"]["access"!="private"]["sport"="swimming"];'
-  //     // query += 'way["access"!="private"]["leisure"="swimming_pool"];'
-  //     // query += 'relation["leisure"]["access"!="private"]["sport"="swimming"];'
-  //     // query += 'relation["access"!="private"]["leisure"="swimming_pool"];'
-  //     query += ")";
-  //     query += ";out geom;>;";
+  React.useEffect(() => {
+    if (isSegmentationSelected) {
+      if (!isMounted.current) {
+        if (useOSMRoadNetwork) {
+          setIsRoadLoaded(false);
+          if(document.getElementById("roadNetwork").classList.contains("active")){
+            setIsRoadActive(prevState=>!prevState)
+          }
 
-  //     console.log(query);
+          // console.log(roadTypes);
 
-  //     fetch("https://overpass-api.de/api/interpreter", {
-  //       method: "POST",
-  //       body: query,
-  //     })
-  //       .then((res) => {
-  //         console.log(res);
+          // let query = "data=";
+          // query += `[bbox:${bbox.join(",")}]`;
+          // query += "[out:xml][timeout:25];";
+          // query += "(";
 
-  //         if (!res.ok) {
-  //           throw new Error("Network response was not OK");
-  //         } else {
-  //           console.log("fetched!");
-  //         }
-  //         return res.text();
-  //       })
-  //       .then((data) => {
-  //         console.log(data);
-  //         let geojson = osm2geojson(data, {});
-  //         console.log(geojson);
-  //         // const geojson = osmtogeojson(data);
-  //         // console.log(geojson);
-  //         setGeoJSONObject(geojson);
-  //         setShowLayer1(true);
-  //         setLoaded(true);
-  //       })
-  //       .catch((error) => {
-  //         console.error(
-  //           "There has been a problem with your fetch operation:",
-  //           error
-  //         );
-  //       });
-  //   } else {
-  //     isMounted.current = true;
-  //   }
-  // }, [roadTypes]);
+          // roadTypes.map((road) => {
+          //   query += `way["highway"=${road}];`;
+          // });
+          // // query += 'way["highway"="motorway"];';
+          // // query += 'node["leisure"]["access"!="private"]["sport"="swimming"];'
+          // // query += 'node["access"!="private"]["leisure"="swimming_pool"];'
+          // // query += 'way["leisure"]["access"!="private"]["sport"="swimming"];'
+          // // query += 'way["access"!="private"]["leisure"="swimming_pool"];'
+          // // query += 'relation["leisure"]["access"!="private"]["sport"="swimming"];'
+          // // query += 'relation["access"!="private"]["leisure"="swimming_pool"];'
+          // query += ")";
+          // query += ";out geom;>;";
+
+          // console.log(query);
+
+          let queryAllRoads = "data=";
+          queryAllRoads += `[bbox:${bbox.join(",")}]`;
+          queryAllRoads += "[out:xml][timeout:50];";
+          queryAllRoads += "(";
+          queryAllRoads += `way["highway"~"motorway|trunk|primary|motorway_link|trunk_link|primary_link|unclassified|tertiary|secondary|track|path|residential|service|secondary_link|tertiary_link"];`;
+          queryAllRoads += ")";
+          queryAllRoads += ";out geom;>;";
+
+          console.log(queryAllRoads);
+
+          fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: queryAllRoads,
+          })
+            .then((res) => {
+              console.log(res);
+
+              if (!res.ok) {
+                throw new Error("Network response was not OK");
+              } else {
+                console.log("fetched!");
+              }
+              return res.text();
+            })
+            .then((data) => {
+              console.log(data);
+              let geojson = osm2geojson(data, {});
+              // console.log(geojson);
+              // const geojson = osmtogeojson(data);
+              console.log(geojson);
+              setGeoJSONObject(geojson);
+              setIsRoadLoaded(true);
+            })
+            .catch((error) => {
+              console.error(
+                "There has been a problem with your fetch operation:",
+                error
+              );
+            });
+        }
+      } else {
+        isMounted.current = true;
+      }
+    }
+  }, [showRoadNetwork]);
 
   const bboxObject = {
     type: "FeatureCollection",
@@ -151,139 +231,128 @@ export default function Main() {
     ],
   };
 
-  const [selectedFile, setSelectedFile] = React.useState();
-  const [isFilePicked, setIsFilePicked] = React.useState(false);
-  const [isSelected, setIsSelected] = React.useState(false);
-  const [segmentationClass, setSegmentationClass] = React.useState("maxClass")
-  const [segmentationData, setSegmentationData] = React.useState({
-    type: "FeatureCollection",
-    features: [],
-  });
-  const [classes, setClasses]= React.useState([])
+  React.useEffect(()=>{
+    if(geoJSONObject){
+      let propHighway = []
+      geoJSONObject.features.map(feature =>{
+        propHighway.push(feature.properties.highway)
+  
+        // console.log(feature.properties.highway)
+      })
+      // let uniqueRoadtype = [...new Set(roadtype)]
+      // console.log(uniqueRoadtype)
+      setRoadTypes([...new Set(propHighway)])
+      setRoadSelection([...new Set(propHighway)])
+    }
 
-  const changeHandler = (event) => {
-    setSelectedFile(event.target.files[0]);
-    setIsSelected(true);
-    // setShowSegmentation(true);
+  },[geoJSONObject])
 
-    // console.log(event.target.files[0].name);
+  
 
-    // event.target.files[0].text().then((res) => {
-    //     const data = csvToArray(res);
-    //     // console.log(data);
+  // Segmentation Data
 
-    //     let segData = [];
-
-    //     const temp = data.map((element) => {
-
-    //       let { Latitude: lat, Longitude: lon, ...propers } = element;
-
-    //       //   console.log(element)
-    //       segData.push({
-    //         type: "Feature",
-    //         geometry: {
-    //           type: "Point",
-    //           coordinates: [[lon, lat]],
-    //         },
-    //         properties: {
-    //           ...propers,
-    //         },
-    //       });
-
-    //       setSegmentationData({
-    //         type: "FeatureCollection",
-    //         features: segData,
-    //       });
-    //     });
-    //   });
-
-  }
-
-
-
+  const segmentationHandler = (event) => {
+    setSegmentationFile(event.target.files[0]);
+    setIsSegmentationSelected(true);
+  };
 
   React.useEffect(() => {
     // if (isMounted.current) {
-    if (isSelected) {
-      console.log(selectedFile.name);
+    if (isSegmentationSelected) {
+      // console.log(segmentationFile.name);
 
-      selectedFile.text().then((res) => {
-          const data = csvToArray(res);
-          console.log("hier")
-          console.log(Object.keys(data[0]).length)
+      segmentationFile.text().then((res) => {
+        const data = csvToArray(res);
 
-          const lons= [...new Set(data.map(item => item.Longitude))].sort()
-          const lats= [...new Set(data.map(item => item.Latitude))].sort()
-          let width = lats.length
-          let height = lons.length
-          let xIntervall = (Math.max(...lats)-Math.min(...lats)) /(width-1)
-          let yIntervall = (Math.max(...lons)-Math.min(...lons)) /(height-1)
+        const lons = [...new Set(data.map((item) => item.Longitude))].sort();
+        const lats = [...new Set(data.map((item) => item.Latitude))].sort();
+        let width = lats.length;
+        let height = lons.length;
+        let xIntervall = (Math.max(...lats) - Math.min(...lats)) / (width - 1);
+        let yIntervall = (Math.max(...lons) - Math.min(...lons)) / (height - 1);
 
-          // let xIntervall = lons[1] - Math.min(...lons)
-          // let yIntervall = lats[1] - Math.min(...lats)
-          let xMin = Math.min(...lats)
-          let xMax = Math.max(...lats)
-          let yMin = Math.min(...lons)
-          let yMax = Math.max(...lons)
+        let xMin = Math.min(...lats);
+        let xMax = Math.max(...lats);
+        let yMin = Math.min(...lons);
+        let yMax = Math.max(...lons);
 
-          // console.log([0,((xMax-xMin)/xIntervall),0,(yMin-yMax)/-yIntervall])
+        let segmentationClasses = Object.keys(data[0]).slice(2);
+        let numClasses = segmentationClasses.length;
+        setClasses(segmentationClasses);
 
-       
-          // setNumClasses(numClasses)
+        let segmentationFeatures = [];
 
-          let segmentationClasses = Object.keys(data[0]).slice(2);
-          let numClasses = segmentationClasses.length
-          setClasses(segmentationClasses)
+        const temp = data.map((element) => {
+          let { Latitude: lat, Longitude: lon, ...propers } = element;
+          let x = (lat - xMin) / xIntervall;
+          let y = (lon - yMax) / -yIntervall;
 
+          let index = y * width + x;
 
-          
-          // console.log(width)
-          // console.log(height)
-          // console.log(xIntervall)
-          // console.log(yIntervall)
-          // console.log(lats.slice(1).map(function(n,i){return n-lats[i]}))
-          // console.log(lons.slice(1).map(function(n,i){return n-lons[i]}))
-  
-          let segData = [];
+          let maxClass = Object.values(propers)
+            .map((x, i) => [x, i])
+            .reduce((r, a) => (a[0] > r[0] ? a : r))[1];
 
-          const temp = data.map((element) => {
-  
-            let { Latitude: lat, Longitude: lon, ...propers } = element;
-            let x = (lat -xMin) /xIntervall
-            let y = (lon -yMax) /-yIntervall
-
-            let index = y*(width)+x
-
-
-            let maxClass = Object.values(propers).map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
-            segData.push({
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: [lat,lon],
-              },
-              properties: {
-                classes: propers,
-                maxClass: maxClass,
-                index:index,
-                x:x,
-                y:y
-              },
-            });
-  
-            setSegmentationData({
-              type: "FeatureCollection",
-              features: segData,
-              classes: segmentationClasses,
-              height:height,
-                width:width
-            });
-            setShowSegmentation(true);
+          segmentationFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [lat, lon],
+            },
+            properties: {
+              classes: propers,
+              maxClass: maxClass,
+              index: index,
+              x: x,
+              y: y,
+            },
           });
         });
-      }
+
+        let segData = {
+          type: "FeatureCollection",
+          features: segmentationFeatures,
+          classes: segmentationClasses,
+          height: height,
+          width: width,
+        };
+
+        let segExtent = transformExtent(
+          new vector({
+            features: new GeoJSON().readFeatures(segData),
+          }).getExtent(),
+          "EPSG:31468",
+          "EPSG:3857"
+        );
+
+        function getCenterOfExtent(Extent) {
+          var X = Extent[0] + (Extent[2] - Extent[0]) / 2;
+          var Y = Extent[1] + (Extent[3] - Extent[1]) / 2;
+          return [X, Y];
+        }
+
+        setCenter(
+          transform(getCenterOfExtent(segExtent), "EPSG:3857", "EPSG:4326")
+        );
+        setExtent(segExtent);
+        setSegmentationData(segData);
+        setShowSegmentation((prevState) => !prevState);
+
+      });
+    }
     // }
-  }, [selectedFile]);
+  }, [segmentationFile]);
+
+  if(showSegmentation){
+    const tabElement = document.getElementById("tab-segmentation").firstChild;
+    // tabElement.classList.remove("active");
+    tabElement.classList.add("done");
+  }
+
+  if(showRoadNetwork){
+    const tabElement = document.getElementById("tab-roadnetwork").firstChild;
+    tabElement.classList.add("done");
+  }
 
   function csvToArray(str, delimiter = ",") {
     const rows = str.replace(/\r\n/g, "\n").split("\n");
@@ -302,29 +371,39 @@ export default function Main() {
     return arr.slice(0, -1);
   }
 
-  console.log(segmentationData)
-
-
   return (
     <main>
       <MapOpenLayers
-        showLayer1={showLayer1}
-        data={geoJSONObject}
+        zoom={zoom}
+        center={center}
+        extent={extent}
         showSegmentation={showSegmentation}
         segmentationData={segmentationData}
+        segmentationProjection={segmentationProjection}
         segmentationClass={segmentationClass}
+        showRoadNetwork={showRoadNetwork}
+        roadNetwork={geoJSONObject}
         bbox={bboxObject}
+        showRoute={showRoute}
+        route={route}
       />
       <Sidebar
-        loaded={loaded}
-        selected={isSelected}
-        changeHandler={changeHandler}
-        showLayer1={showLayer1}
-        setShowLayer1={setShowLayer1}
+        segmentationHandler={segmentationHandler}
+        isSegmentationSelected={isSegmentationSelected}
         showSegmentation={showSegmentation}
         setShowSegmentation={setShowSegmentation}
+        segmentationProjection={segmentationProjection}
+        setSegmentationProjection={setSegmentationProjection}
         setSegmentationClass={setSegmentationClass}
         classes={classes}
+        useOSMRoadNetwork={useOSMRoadNetwork}
+        roadNetworkHandler={roadNetworkHandler}
+        isRoadActive={isRoadActive}
+        isRoadLoaded={isRoadLoaded}
+        showRoadNetwork={showRoadNetwork}
+        setShowRoadNetwork={setShowRoadNetwork}
+        roadTypes={roadTypes}
+        setRoadTypes={setRoadTypes}
       />
     </main>
   );

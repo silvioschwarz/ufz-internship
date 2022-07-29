@@ -2,7 +2,7 @@ import React, { useState } from "react";
 // import './App.css';
 import Map from "./Map";
 import { ImageLayer, Layers, TileLayer, VectorLayer } from "./Layers";
-import { Circle as CircleStyle, Fill, Stroke, Style, Icon } from "ol/style";
+import { Circle as CircleStyle, Fill, Stroke, Style } from "ol/style";
 import { imageStatic, osm, vector } from "./Source";
 import {
   fromLonLat,
@@ -12,11 +12,6 @@ import {
   Projection,
 } from "ol/proj";
 import GeoJSON from "ol/format/GeoJSON";
-import { getCenter, getEnlargedArea } from "ol/extent";
-import { getArea, getLength } from "ol/sphere";
-
-import DataTile from "ol/source/DataTile";
-import TileLayerT from "ol/layer/WebGLTile";
 
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
@@ -29,7 +24,7 @@ import {
   OverviewMapControl,
   ZoomControl,
 } from "./Controls";
-import ImageSource from "ol/source/Image";
+import { set } from "ol/transform";
 
 let colormap = require("colormap");
 
@@ -66,7 +61,7 @@ let styles = {
   Line: new Style({
     stroke: new Stroke({
       color: "red",
-      width: 2,
+      width: 1,
     }),
     fill: new Fill({
       color: "rgba(0, 0, 255, 0.1)",
@@ -75,10 +70,10 @@ let styles = {
   LineGreen: new Style({
     stroke: new Stroke({
       color: "green",
-      width: 5,
+      width: 2,
     }),
     fill: new Fill({
-      color: "rgba(0, 255, 0, 0.1)",
+      color: "rgba(0, 0, 0, 0)",
     }),
   }),
 };
@@ -91,15 +86,14 @@ proj4.defs(
 register(proj4);
 
 const MapOpenLayers = (props) => {
-  // console.log(props)
-  const [center, setCenter] = useState([9.0, 52.5]);
-  const [zoom, setZoom] = useState(7);
-  // const [extent, setExtent] = useState([1212787.7209014362, 6733006.138551631, 1282450.298953579, 6780305.3349028155])
 
-  var extent = [
-    1212700.7209014362, 6733000.138551631, 1282400.298953579,
-    6780300.3349028155,
-  ];
+
+  // console.log(props)
+
+  // var extent = [
+  //   1212700.7209014362, 6733000.138551631, 1282400.298953579,
+  //   6780300.3349028155,
+  // ];
 
   if (props.showSegmentation) {
     // console.log(props.segmentationData);
@@ -110,6 +104,7 @@ const MapOpenLayers = (props) => {
       "EPSG:31468",
       "EPSG:3857"
     );
+
 
     // console.log(extentIMG);
 
@@ -152,15 +147,15 @@ const MapOpenLayers = (props) => {
     // console.log("colormap")
     // console.log(colors)
 
-    console.log(props.segmentationClass)
+    // console.log(props.segmentationClass)
 
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      // Modify pixel data
-      imageData.data[i + 0] = 255; // R value
-      imageData.data[i + 1] = 255; // G value
-      imageData.data[i + 2] = 255; // B value
-      imageData.data[i + 3] = 100; // getRandomInt(255);  // A value
-    }
+    // for (let i = 0; i < imageData.data.length; i += 4) {
+    // Modify pixel data
+    //   imageData.data[i + 0] = 255; // R value
+    //   imageData.data[i + 1] = 255; // G value
+    //   imageData.data[i + 2] = 255; // B value
+    //   imageData.data[i + 3] = 100; // getRandomInt(255);  // A value
+    // }
 
     
 
@@ -199,7 +194,7 @@ const MapOpenLayers = (props) => {
 
     // Draw image data to the canvas
 
-    console.log(imageData.data);
+    // console.log(imageData.data);
     ctx.putImageData(imageData, 0, 0);
     var dataURL = canvas.toDataURL();
 
@@ -221,10 +216,18 @@ const MapOpenLayers = (props) => {
 
   return (
     <div className="map-container">
-      <Map center={fromLonLat(center)} zoom={zoom} extent={extent}>
+      <Map 
+      center={fromLonLat(props.center)} 
+      zoom={props.zoom}
+      extent={props.extent} 
+      >
         <Layers>
+          {/* BaseMap */}
           <TileLayer source={osm()} zIndex={0} />
+          {/* Segmentation Raster */}
           {props.showSegmentation && <ImageLayer source={sourceImage} />}
+
+          {/* GEOJSON OF RASTER DATA */}
           {/* {props.showLayer1  && (
           <VectorLayer
               source={vector({
@@ -235,19 +238,21 @@ const MapOpenLayers = (props) => {
               })}
               style={[styles.Point,styles.Point2,styles.Point,styles.Point2]}
             />
-          )} */}
-          {/*
-          {props.showLayer1 && props.data && (
+          )}
+           */}
+           {/* RoadNetwork */}
+          {props.showRoadNetwork && props.roadNetwork && (
             <VectorLayer
               source={vector({
-                features: new GeoJSON().readFeatures(props.data, {
+                features: new GeoJSON().readFeatures(props.roadNetwork, {
                   featureProjection: get("EPSG:3857"),
                 }),
               })}
               style={styles.Line}
             />
           )}
-          {props.showLayer1 && props.data && (
+          {/* BoundingBox */}
+          {props.showRoadNetwork && props.roadNetwork && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.bbox, {
@@ -257,15 +262,16 @@ const MapOpenLayers = (props) => {
               style={styles.LineGreen}
               zIndex={1}
             />
-          )}
-          {props.showSegmentation && props.dataSegmentation && (
+          )} 
+          {/* Route */}
+          {/* {props.showRoute && props.Route && (
             <VectorLayer
               source={vector({
-                features: new GeoJSON().readFeatures(props.dataSegmentation, {
+                features: new GeoJSON().readFeatures(props.Route, {
                   featureProjection: get("EPSG:3857"),
                 }),
               })}
-              style={styles.MultiPolygon}
+              style={styles.Line}
               zIndex={1}
             />
           )} */}

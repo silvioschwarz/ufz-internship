@@ -2,15 +2,33 @@ import React from "react";
 import BeatLoader from "react-spinners/BeatLoader";
 
 export default function Sidebar(props) {
-
-  const classElements = props.classes.map((item)=>{
+  const classElements = props.classes.map((item) => {
     // console.log(item)
-    return(<option key={item} value={item}>{item}</option>)
-  })
+    return (
+      <option key={item} value={item}>
+        {item}
+      </option>
+    );
+  });
+
+  const roadElements = props.roadTypes.map((item) => {
+    console.log(item);
+    return (
+      <div key={item}>
+        <input
+          type="checkbox"
+          defaultChecked={true}
+          value={item}
+          onChange={props.roadNetworkHandler}
+        />
+        <span>{item}</span>
+      </div>
+    );
+  });
 
   return (
     <div className="selection-div">
-      {!props.loaded && (
+      {props.isRoadActive && !props.isRoadLoaded && (
         <div className="loading-div">
           <BeatLoader />
         </div>
@@ -43,13 +61,12 @@ export default function Sidebar(props) {
             </a>
           </li>
         </ul>
-         Tab Contents 
+        Tab Contents
         <div className="tab-content">
           <div className="tab-pane container active" id="segmentation">
             <div className="aside-child">
               <fieldset>
                 <legend>Input Segmentation</legend>
-
                 <div className="">
                   <div className="mb-0">
                     <input
@@ -57,16 +74,16 @@ export default function Sidebar(props) {
                       type="file"
                       name="segfile"
                       id="segFile"
-                      onChange={props.changeHandler}
+                      onChange={props.segmentationHandler}
                     />
-                    {!props.selected ? (
+                    {!props.isSegmentationSelected ? (
                       <pre id="file-content"></pre>
                     ) : (
                       <p>Select File</p>
                     )}
                   </div>
                   <br />
-                   <select id="EPSG" name="EPSG">
+                  <select id="EPSG" name="EPSG">
                     <option>Select EPSG</option>
                     <option disabled>_________</option>
                     <option>4326</option>
@@ -75,19 +92,26 @@ export default function Sidebar(props) {
                     <option>4446</option>
                   </select>
                 </div>
-                {props.selected && (
-                <select onChange={(event) =>{
-                  props.setShowSegmentation(false)
-                  props.setSegmentationClass(event.target.value)
-                  setTimeout(function(){props.setShowSegmentation(true)},500)           
-                }
-                }
-                  defaultValue={"maxClass"}
-                   id="Classes" name="Classes">
+                {/* Segmentation Class Selection */}
+                {props.isSegmentationSelected && (
+                  <select
+                    onChange={(event) => {
+                      props.setShowSegmentation(false);
+                      props.setSegmentationClass(event.target.value);
+                      setTimeout(function () {
+                        props.setShowSegmentation(true);
+                      }, 500);
+                    }}
+                    defaultValue={"maxClass"}
+                    id="Classes"
+                    name="Classes"
+                  >
                     <option value="maxClass">max Class</option>
                     <option disabled>_________</option>
                     {classElements}
-                  </select>)}
+                  </select>
+                )}
+                {/* Show Segmentation */}
                 <input
                   type="checkbox"
                   checked={props.showSegmentation}
@@ -98,9 +122,9 @@ export default function Sidebar(props) {
                 Show Segmentation
                 {/* <input
                   type="checkbox"
-                  checked={props.showLayer1}
+                  checked={props.showRoadNetwork}
                   onChange={(event) =>
-                    props.setShowLayer1(event.target.checked)
+                    props.setShowRoadNetwork(event.target.checked)
                   }
                 />{" "}
                 show GeoJSON */}
@@ -108,14 +132,28 @@ export default function Sidebar(props) {
             </div>
           </div>
 
-          <div className="aside-child tab-pane container fade" id="roadNetwork">
+          <div className="tab-pane container fade" id="roadNetwork">
             <fieldset>
               <legend>Input Road network</legend>
               <div className="flexx-row">
                 <fieldset style={{ display: "inline" }}>
-                  <input type="radio" name="roadNetwork" /> use default
+                  <input
+                    type="radio"
+                    value="default"
+                    name="roadNetwork"
+                    checked={props.useOSMRoadNetwork === true}
+                    onChange={props.roadNetworkHandler}
+                  />{" "}
+                  use default
                   <br />
-                  <input type="radio" name="roadNetwork" /> use own road network
+                  <input
+                    type="radio"
+                    value="custom"
+                    name="roadNetwork"
+                    checked={props.useOSMRoadNetwork === false}
+                    onChange={props.roadNetworkHandler}
+                  />{" "}
+                  use own road network
                 </fieldset>
                 <br />
                 <div className="mb-0 w-50">
@@ -131,13 +169,19 @@ export default function Sidebar(props) {
               </div>
               <input
                 type="checkbox"
-                checked={props.showLayer1}
-                onChange={(event) => props.setShowLayer1(event.target.checked)}
+                checked={props.showRoadNetwork}
+                onChange={(event) =>
+                  props.setShowRoadNetwork(event.target.checked)
+                }
               />{" "}
               Show Road Network
-              <fieldset className="roadTypes">
-                <legend>Select Roads to show</legend>
-                 {/* <input
+              {props.isRoadLoaded && (
+                <fieldset className="roadTypes">
+                  <legend>Select Roads to show</legend>
+
+                  <div>{roadElements}</div>
+
+                  {/* <input
                   type="checkbox"
                   id="motorway"
                   name="motorway"
@@ -165,8 +209,9 @@ export default function Sidebar(props) {
                   checked={primary}
                   onChange={handleRoadTypes}
                 /> 
-                <label htmlFor="primary"> primary</label> */}
-              </fieldset>
+                <label htmlFor="primary"> primary</label>  */}
+                </fieldset>
+              )}
             </fieldset>
           </div>
 
