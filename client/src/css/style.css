@@ -111,10 +111,14 @@ fieldset, legend {
   margin:1%
 }
 
-.roadtypes{
-  overflow-y: scroll;
-  max-height: 100px;
+.roadElements {
+  /* overflow-y: scroll; */
+  max-height: 30%;
+  display: grid;
+  grid-template-columns: 50% 50%;
 }
+
+
 
 .flexx-row{
   display: flex;

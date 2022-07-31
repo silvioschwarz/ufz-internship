@@ -63,6 +63,7 @@ export default function Main() {
   const [useOSMRoadNetwork, setUseOSMRoadNetwork] = React.useState(true);
 
   const [showRoadNetwork, setShowRoadNetwork] = React.useState(false);
+  const [loadRoadNetwork, setLoadRoadNetwork] = React.useState(false);
 
   const [roadNetwork, setRoadNetwork] = React.useState(
     require("../data/berlin_bezirke.json")
@@ -124,19 +125,41 @@ export default function Main() {
   //   // setPrimary(prevState => !prevState)
   // }
 
-  const roadNetworkHandler = (event) => {
+  const roadSelectionHandler = (event) => {
+    let selectedRoadTypes = Array.from(
+      document.querySelectorAll('.roadTypes input[type="checkbox"]:checked')
+    ).map((road) => road.value);
+    // console.log("roadSelection")
+    // console.log(selectedRoadTypes)
+    setRoadSelection(selectedRoadTypes);
 
+    // console.log(geoJSONObject)
+
+    let filteredGeoJSON = {
+      type: "FeatureCollection",
+      features: geoJSONObject.features.filter((feature) => {
+        // (selectedRoadTypes.includes(feature.property.highway))
+        return selectedRoadTypes.includes(feature.properties.highway);
+      }),
+    };
+    // console.log(filteredGeoJSON);
+
+    setGeoJSONObject(filteredGeoJSON);
   };
 
-  
+
+
+  const roadNetworkHandler = (event) => {};
 
   React.useEffect(() => {
     if (isSegmentationSelected) {
       if (!isMounted.current) {
         if (useOSMRoadNetwork) {
           setIsRoadLoaded(false);
-          if(document.getElementById("roadNetwork").classList.contains("active")){
-            setIsRoadActive(prevState=>!prevState)
+          if (
+            document.getElementById("roadNetwork").classList.contains("active")
+          ) {
+            setIsRoadActive((prevState) => !prevState);
           }
 
           // console.log(roadTypes);
@@ -176,7 +199,7 @@ export default function Main() {
             body: queryAllRoads,
           })
             .then((res) => {
-              console.log(res);
+              // console.log(res);
 
               if (!res.ok) {
                 throw new Error("Network response was not OK");
@@ -186,11 +209,11 @@ export default function Main() {
               return res.text();
             })
             .then((data) => {
-              console.log(data);
+              // console.log(data);
               let geojson = osm2geojson(data, {});
               // console.log(geojson);
               // const geojson = osmtogeojson(data);
-              console.log(geojson);
+              // console.log(geojson);
               setGeoJSONObject(geojson);
               setIsRoadLoaded(true);
             })
@@ -205,7 +228,7 @@ export default function Main() {
         isMounted.current = true;
       }
     }
-  }, [showRoadNetwork]);
+  }, [loadRoadNetwork]);
 
   const bboxObject = {
     type: "FeatureCollection",
@@ -231,23 +254,29 @@ export default function Main() {
     ],
   };
 
-  React.useEffect(()=>{
-    if(geoJSONObject){
-      let propHighway = []
-      geoJSONObject.features.map(feature =>{
-        propHighway.push(feature.properties.highway)
-  
+  React.useEffect(() => {
+    if (geoJSONObject) {
+      let propHighway = [];
+      geoJSONObject.features.map((feature) => {
+        propHighway.push(feature.properties.highway);
+
         // console.log(feature.properties.highway)
-      })
+      });
       // let uniqueRoadtype = [...new Set(roadtype)]
       // console.log(uniqueRoadtype)
-      setRoadTypes([...new Set(propHighway)])
-      setRoadSelection([...new Set(propHighway)])
+      setRoadTypes([...new Set(propHighway)]);
+      setRoadSelection([...new Set(propHighway)]);
     }
+  }, [isRoadLoaded]);
 
-  },[geoJSONObject])
-
-  
+  React.useEffect(() => {
+    if(loadRoadNetwork){
+      setShowRoadNetwork(prevState=>!prevState)
+      setTimeout(function () {
+        setShowRoadNetwork(true);
+      }, 500);
+    }
+  }, [geoJSONObject]);
 
   // Segmentation Data
 
@@ -337,19 +366,18 @@ export default function Main() {
         setExtent(segExtent);
         setSegmentationData(segData);
         setShowSegmentation((prevState) => !prevState);
-
       });
     }
     // }
   }, [segmentationFile]);
 
-  if(showSegmentation){
+  if (showSegmentation) {
     const tabElement = document.getElementById("tab-segmentation").firstChild;
     // tabElement.classList.remove("active");
     tabElement.classList.add("done");
   }
 
-  if(showRoadNetwork){
+  if (loadRoadNetwork) {
     const tabElement = document.getElementById("tab-roadnetwork").firstChild;
     tabElement.classList.add("done");
   }
@@ -370,6 +398,8 @@ export default function Main() {
     // return the array
     return arr.slice(0, -1);
   }
+
+  console.log(geoJSONObject)
 
   return (
     <main>
@@ -397,11 +427,14 @@ export default function Main() {
         setSegmentationClass={setSegmentationClass}
         classes={classes}
         useOSMRoadNetwork={useOSMRoadNetwork}
+        roadSelectionHandler={roadSelectionHandler}
         roadNetworkHandler={roadNetworkHandler}
         isRoadActive={isRoadActive}
         isRoadLoaded={isRoadLoaded}
         showRoadNetwork={showRoadNetwork}
         setShowRoadNetwork={setShowRoadNetwork}
+        loadRoadNetwork={loadRoadNetwork}
+        setLoadRoadNetwork={setLoadRoadNetwork}
         roadTypes={roadTypes}
         setRoadTypes={setRoadTypes}
       />

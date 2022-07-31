@@ -12,14 +12,14 @@ export default function Sidebar(props) {
   });
 
   const roadElements = props.roadTypes.map((item) => {
-    console.log(item);
+    // console.log(item);
     return (
       <div key={item}>
         <input
           type="checkbox"
           defaultChecked={true}
           value={item}
-          onChange={props.roadNetworkHandler}
+          onChange={props.roadSelectionHandler}
         />
         <span>{item}</span>
       </div>
@@ -76,7 +76,7 @@ export default function Sidebar(props) {
                       id="segFile"
                       onChange={props.segmentationHandler}
                     />
-                    {!props.isSegmentationSelected ? (
+                    {props.isSegmentationSelected ? (
                       <pre id="file-content"></pre>
                     ) : (
                       <p>Select File</p>
@@ -132,6 +132,8 @@ export default function Sidebar(props) {
             </div>
           </div>
 
+          {/* ROAD NETWORK */}
+
           <div className="tab-pane container fade" id="roadNetwork">
             <fieldset>
               <legend>Input Road network</legend>
@@ -167,49 +169,36 @@ export default function Sidebar(props) {
                   />
                 </div>
               </div>
-              <input
-                type="checkbox"
-                checked={props.showRoadNetwork}
-                onChange={(event) =>
-                  props.setShowRoadNetwork(event.target.checked)
-                }
-              />{" "}
-              Show Road Network
+              <div className="flexx-row">
+                <div>
+                  <input
+                    id="LoadRoadNetwork"
+                    type="checkbox"
+                    checked={props.loadRoadNetwork}
+                    onChange={(event) =>
+                      props.setLoadRoadNetwork(event.target.checked)
+                    }
+                  />{" "}
+                  <label htmlFor="LoadRoadNetwork">Load Road Network</label>
+                </div>
+                <div>
+                  <input
+                    id="showRoadNetwork"
+                    type="checkbox"
+                    checked={props.showRoadNetwork}
+                    onChange={(event) =>
+                      props.setShowRoadNetwork(event.target.checked)
+                    }
+                  />{" "}
+                  <label htmlFor="showRoadNetwork">Show Road Network</label>
+                </div>
+              </div>
+
+              {/* Select Road Type */}
               {props.isRoadLoaded && (
                 <fieldset className="roadTypes">
                   <legend>Select Roads to show</legend>
-
-                  <div>{roadElements}</div>
-
-                  {/* <input
-                  type="checkbox"
-                  id="motorway"
-                  name="motorway"
-                  value="motorway"
-                  checked={motorway}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="motorway"> motorway</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="trunk"
-                  name="trunk"
-                  value="trunk"
-                  checked={trunk}
-                  onChange={handleRoadTypes}
-                />
-                <label htmlFor="trunk"> trunk</label>
-                <br />
-                <input
-                  type="checkbox"
-                  id="primary"
-                  name="primary"
-                  value="primary"
-                  checked={primary}
-                  onChange={handleRoadTypes}
-                /> 
-                <label htmlFor="primary"> primary</label>  */}
+                  <div className="roadElements">{roadElements}</div>
                 </fieldset>
               )}
             </fieldset>
