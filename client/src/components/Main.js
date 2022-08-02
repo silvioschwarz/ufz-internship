@@ -65,9 +65,7 @@ export default function Main() {
   const [showRoadNetwork, setShowRoadNetwork] = React.useState(false);
   const [loadRoadNetwork, setLoadRoadNetwork] = React.useState(false);
 
-  const [roadNetwork, setRoadNetwork] = React.useState(
-    require("../data/berlin_bezirke.json")
-  );
+  const [roadNetwork, setRoadNetwork] = React.useState();
 
   const [isRoadActive, setIsRoadActive] = React.useState(false);
 
@@ -144,10 +142,8 @@ export default function Main() {
     };
     // console.log(filteredGeoJSON);
 
-    setGeoJSONObject(filteredGeoJSON);
+    setRoadNetwork(filteredGeoJSON);
   };
-
-
 
   const roadNetworkHandler = (event) => {};
 
@@ -215,6 +211,7 @@ export default function Main() {
               // const geojson = osmtogeojson(data);
               // console.log(geojson);
               setGeoJSONObject(geojson);
+              setRoadNetwork(geojson);
               setIsRoadLoaded(true);
             })
             .catch((error) => {
@@ -270,13 +267,13 @@ export default function Main() {
   }, [isRoadLoaded]);
 
   React.useEffect(() => {
-    if(loadRoadNetwork){
-      setShowRoadNetwork(prevState=>!prevState)
+    if (loadRoadNetwork) {
+      setShowRoadNetwork((prevState) => !prevState);
       setTimeout(function () {
         setShowRoadNetwork(true);
-      }, 500);
+      }, 50);
     }
-  }, [geoJSONObject]);
+  }, [roadNetwork]);
 
   // Segmentation Data
 
@@ -399,7 +396,55 @@ export default function Main() {
     return arr.slice(0, -1);
   }
 
-  console.log(geoJSONObject)
+  // ROUTING
+
+  React.useEffect(() => {
+    // if (document.getElementById("roadNetwork").classList.contains("active")) {
+    //   setIsRoadActive((prevState) => !prevState);
+    // }
+
+    let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219"
+    query += "?geometries=geojson"
+
+    console.log(query);
+
+//     GET
+// /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
+// Example Requests
+// 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
+
+    fetch("http://router.project-osrm.org/trip/v1/driving/"+query, {
+      method: "POST",
+      body: query,
+    })
+      .then((res) => {
+        console.log(res);
+
+        if (!res.ok) {
+          throw new Error("Network response was not OK");
+        } else {
+          console.log("fetched!");
+        }
+        return res.text();
+      })
+      .then((data) => {
+        console.log(data);
+        setRoute(data)
+        // let geojson = osm2geojson(data, {});
+        // console.log(geojson);
+        // const geojson = osmtogeojson(data);
+        // console.log(geojson);
+        // setGeoJSONObject(geojson);
+        // setRoadNetwork(geojson);
+        // setIsRoadLoaded(true);
+      })
+      .catch((error) => {
+        console.error(
+          "There has been a problem with your fetch operation:",
+          error
+        );
+      });
+  }, [loadRoadNetwork]);
 
   return (
     <main>
@@ -412,7 +457,7 @@ export default function Main() {
         segmentationProjection={segmentationProjection}
         segmentationClass={segmentationClass}
         showRoadNetwork={showRoadNetwork}
-        roadNetwork={geoJSONObject}
+        roadNetwork={roadNetwork}
         bbox={bboxObject}
         showRoute={showRoute}
         route={route}
