@@ -34,7 +34,9 @@ let styles = {
   Point: new Style({
     image: new CircleStyle({
       radius: 10,
-      fill: null,
+      fill: new Fill({
+        color: "rgba(0, 255, 0, 0.8)",
+      }),
       stroke: new Stroke({
         color: "green",
       }),
@@ -134,7 +136,7 @@ const MapOpenLayers = (props) => {
     const ctx = canvas.getContext("2d");
     const imageData = ctx.createImageData(width, height);
 
-    let colors = colormap({
+    var colors = colormap({
       colormap: "jet",
       nshades: props.segmentationData.classes.length,
       format: "rba",
@@ -237,7 +239,20 @@ const MapOpenLayers = (props) => {
                 featureProjection: 'EPSG:3857'
               }).readFeatures(props.topPoints),
             })}
-            style={styles.Point}
+            style={function(feature){
+              // console.log(feature)
+              return new Style({
+                image: new CircleStyle({
+                  radius: 10,
+                  fill: new Fill({
+                    color: colors[feature.values_.maxClass],
+                  }),
+                  stroke: new Stroke({
+                    color: colors[feature.values_.maxClass],
+                  }),
+                }),
+              })
+            }}
           />
 
           )}

@@ -351,7 +351,7 @@ export default function Main() {
 
         let topFeatures = classArray.map((klasse) => {
           //TODO set n dynamically
-          const n = 1;
+          const n = 2;
           return klasse.slice(0, n);
         });
 
