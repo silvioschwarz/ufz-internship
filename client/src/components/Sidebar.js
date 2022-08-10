@@ -110,6 +110,7 @@ export default function Sidebar(props) {
                     <option disabled>_________</option>
                     {classElements}
                   </select>
+                  
                 )}
                 {/* Show Segmentation */}
                 <input
@@ -120,6 +121,17 @@ export default function Sidebar(props) {
                   }
                 />{" "}
                 Show Segmentation
+                {/* show top points */}
+                {props.isSegmentationSelected && (
+                  <label>
+                  <input
+                  type="checkbox"
+                  checked={props.showTopPoints}
+                  onChange={(event) =>
+                    props.setShowTopPoints(event.target.checked)
+                  }
+                />{" "}Show Top Points</label>
+)}
                 {/* <input
                   type="checkbox"
                   checked={props.showRoadNetwork}

@@ -33,7 +33,7 @@ let colormap = require("colormap");
 let styles = {
   Point: new Style({
     image: new CircleStyle({
-      radius: 1,
+      radius: 10,
       fill: null,
       stroke: new Stroke({
         color: "green",
@@ -169,9 +169,9 @@ const MapOpenLayers = (props) => {
       // console.log("index")
       // console.log(index)
 
-      imageData.data[index + 0] = colors[element.properties.maxClass][0]; // R value
-      imageData.data[index + 1] = colors[element.properties.maxClass][1]; // G value
-      imageData.data[index + 2] = colors[element.properties.maxClass][2]; // B value
+      imageData.data[index + 0] = colors[(element.properties.maxClass-1)][0]; // R value
+      imageData.data[index + 1] = colors[(element.properties.maxClass-1)][1]; // G value
+      imageData.data[index + 2] = colors[(element.properties.maxClass-1)][2]; // B value
       imageData.data[index + 3] = 100; // getRandomInt(255);  // A value
     });}
     else{
@@ -214,6 +214,8 @@ const MapOpenLayers = (props) => {
   //   return color;
   // }
 
+
+
   return (
     <div className="map-container">
       <Map 
@@ -226,6 +228,19 @@ const MapOpenLayers = (props) => {
           <TileLayer source={osm()} zIndex={0} />
           {/* Segmentation Raster */}
           {props.showSegmentation && <ImageLayer source={sourceImage} />}
+          {/* top points */}
+          {props.showSegmentation && props.showTopPoints &&(
+            <VectorLayer
+            source={vector({
+              features: new GeoJSON({
+                dataProjection: 'EPSG:31468',
+                featureProjection: 'EPSG:3857'
+              }).readFeatures(props.topPoints),
+            })}
+            style={styles.Point}
+          />
+
+          )}
 
           {/* GEOJSON OF RASTER DATA */}
           {/* {props.showLayer1  && (

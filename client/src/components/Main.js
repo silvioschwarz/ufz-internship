@@ -4,13 +4,6 @@ import MapOpenLayers from "./openLayers/MapOpenLayers";
 import Sidebar from "./Sidebar";
 import FileUpload from "./FileUpload";
 
-import data from "../data/berlin_bezirke.json";
-// import styled, { css } from "styled-components";
-// import "../css/loader.css";
-
-// const ConditionalWrapper = ({ condition, wrapper, children }) =>
-//   condition ? wrapper(children) : children;
-
 // const osmtogeojson = require('osmtogeojson');
 const osm2geojson = require("osm2geojson-lite");
 
@@ -57,6 +50,12 @@ export default function Main() {
 
   const [segmentationClass, setSegmentationClass] = React.useState("maxClass");
   const [classes, setClasses] = React.useState([]);
+
+  const [showTopPoints, setShowTopPoints] = React.useState(false);
+  const [topPoints, setTopPoints] = React.useState({
+    type: "FeatureCollection",
+    features: [],
+  });
 
   //ROAD NETWORK
 
@@ -188,7 +187,7 @@ export default function Main() {
           queryAllRoads += ")";
           queryAllRoads += ";out geom;>;";
 
-          console.log(queryAllRoads);
+          // console.log(queryAllRoads);
 
           fetch("https://overpass-api.de/api/interpreter", {
             method: "POST",
@@ -303,7 +302,7 @@ export default function Main() {
         let yMax = Math.max(...lons);
 
         let segmentationClasses = Object.keys(data[0]).slice(2);
-        let numClasses = segmentationClasses.length;
+        // let numClasses = segmentationClasses.length;
         setClasses(segmentationClasses);
 
         let segmentationFeatures = [];
@@ -315,9 +314,10 @@ export default function Main() {
 
           let index = y * width + x;
 
-          let maxClass = Object.values(propers)
-            .map((x, i) => [x, i])
-            .reduce((r, a) => (a[0] > r[0] ? a : r))[1];
+          let maxClass =
+            Object.values(propers)
+              .map((x, i) => [x, i])
+              .reduce((r, a) => (a[0] > r[0] ? a : r))[1] + 1;
 
           segmentationFeatures.push({
             type: "Feature",
@@ -335,6 +335,32 @@ export default function Main() {
           });
         });
 
+        let classArray = segmentationClasses.map((element) => {
+          return segmentationFeatures
+            .filter((feature) => {
+              return (
+                feature.properties.maxClass == element.replace("Class", "")
+              );
+            })
+            .sort(
+              (a, b) =>
+                parseFloat(b.properties.classes.Class1) -
+                parseFloat(a.properties.classes.Class1)
+            );
+        });
+
+        let topFeatures = classArray.map((klasse) => {
+          //TODO set n dynamically
+          const n = 1;
+          return klasse.slice(0, n);
+        });
+
+        let topPointsTemp = {
+          type: "FeatureCollection",
+          features: topFeatures.flat(),
+        };
+
+        
         let segData = {
           type: "FeatureCollection",
           features: segmentationFeatures,
@@ -362,6 +388,7 @@ export default function Main() {
         );
         setExtent(segExtent);
         setSegmentationData(segData);
+        setTopPoints(topPointsTemp);
         setShowSegmentation((prevState) => !prevState);
       });
     }
@@ -395,7 +422,6 @@ export default function Main() {
     // return the array
     return arr.slice(0, -1);
   }
-
   // ROUTING
 
   React.useEffect(() => {
@@ -403,33 +429,33 @@ export default function Main() {
     //   setIsRoadActive((prevState) => !prevState);
     // }
 
-    let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219"
-    query += "?geometries=geojson"
+    let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219";
+    query += "?geometries=geojson";
 
-    console.log(query);
+    // console.log(query);
 
-//     GET
-// /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
-// Example Requests
-// 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
+    //     GET
+    // /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
+    // Example Requests
+    // 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
 
-    fetch("http://router.project-osrm.org/trip/v1/driving/"+query, {
+    fetch("http://router.project-osrm.org/trip/v1/driving/" + query, {
       method: "POST",
       body: query,
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
 
         if (!res.ok) {
           throw new Error("Network response was not OK");
         } else {
-          console.log("fetched!");
+          // console.log("fetched!");
         }
         return res.text();
       })
       .then((data) => {
-        console.log(data);
-        setRoute(data)
+        // console.log(data);
+        setRoute(data);
         // let geojson = osm2geojson(data, {});
         // console.log(geojson);
         // const geojson = osmtogeojson(data);
@@ -456,6 +482,8 @@ export default function Main() {
         segmentationData={segmentationData}
         segmentationProjection={segmentationProjection}
         segmentationClass={segmentationClass}
+        showTopPoints={showTopPoints}
+        topPoints={topPoints}
         showRoadNetwork={showRoadNetwork}
         roadNetwork={roadNetwork}
         bbox={bboxObject}
@@ -471,6 +499,8 @@ export default function Main() {
         setSegmentationProjection={setSegmentationProjection}
         setSegmentationClass={setSegmentationClass}
         classes={classes}
+        showTopPoints={showTopPoints}
+        setShowTopPoints={setShowTopPoints}
         useOSMRoadNetwork={useOSMRoadNetwork}
         roadSelectionHandler={roadSelectionHandler}
         roadNetworkHandler={roadNetworkHandler}
