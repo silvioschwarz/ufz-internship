@@ -57,7 +57,7 @@ let styles = {
       width: 2,
     }),
     fill: new Fill({
-      color: "rgba(0, 0, 255, 0.1)",
+      color: "rgba(0, 0, 255, 0.)",
     }),
   }),
   Line: new Style({
@@ -97,15 +97,21 @@ const MapOpenLayers = (props) => {
   //   6780300.3349028155,
   // ];
 
+  
+
   if (props.showSegmentation) {
     // console.log(props.segmentationData);
     let extentIMG = transformExtent(
       new vector({
         features: new GeoJSON().readFeatures(props.segmentationData),
       }).getExtent(),
-      "EPSG:31468",
+      "EPSG:4326",
       "EPSG:3857"
     );
+
+    // let extentIMG = new vector({
+    //   features: new GeoJSON().readFeatures(props.segmentationData),
+    // }).getExtent();
 
 
     // console.log(extentIMG);
@@ -235,7 +241,7 @@ const MapOpenLayers = (props) => {
             <VectorLayer
             source={vector({
               features: new GeoJSON({
-                dataProjection: 'EPSG:31468',
+                dataProjection: 'EPSG:4326',
                 featureProjection: 'EPSG:3857'
               }).readFeatures(props.topPoints),
             })}
@@ -279,6 +285,17 @@ const MapOpenLayers = (props) => {
                 }),
               })}
               style={styles.Line}
+            />
+          )}
+          {/* buffered Roads */}
+          {props.showRoadNetwork && props.roadNetwork && (
+            <VectorLayer
+              source={vector({
+                features: new GeoJSON().readFeatures(props.buffRoads, {
+                  featureProjection: get("EPSG:3857"),
+                }),
+              })}
+              style={styles.MultiPolygon}
             />
           )}
           {/* BoundingBox */}

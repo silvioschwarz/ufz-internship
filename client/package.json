@@ -2,6 +2,7 @@
   "name": "project",
   "homepage": "https://silvioschwarz.github.io/ufz-internship/",
   "dependencies": {
+    "@turf/turf": "^6.5.0",
     "bootstrap": "^5.1.3",
     "colormap": "^2.3.2",
     "fs": "^0.0.1-security",

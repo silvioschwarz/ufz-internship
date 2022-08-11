@@ -18,8 +18,11 @@ import GeoJSON from "ol/format/GeoJSON";
 import { vector } from "./openLayers/Source";
 import { extent } from "ol/extent";
 
-// import proj4 from "proj4";
-// import { register } from "ol/proj/proj4";
+import buffer from "@turf/buffer";
+import pointsWithinPolygon from "@turf/points-within-polygon"
+
+import proj4 from "proj4";
+import { register } from "ol/proj/proj4";
 
 // proj4.defs(
 //   "EPSG:31468",
@@ -27,6 +30,13 @@ import { extent } from "ol/extent";
 // );
 
 // register(proj4);
+
+proj4.defs(
+  "EPSG:31468",
+  "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
+);
+
+register(proj4);
 
 export default function Main() {
   //MAP
@@ -91,36 +101,10 @@ export default function Main() {
   const [route, setRoute] = React.useState();
   const [showRoute, setShowRoute] = React.useState(false);
 
-  // function handleRoadTypes() {
-  //   setMotorway(false);
-  //   setPrimary(false);
-  //   setTrunk(false);
-
-  //   let roads = Array.from(
-  //     document.querySelectorAll('.roadTypes input[type="checkbox"]:checked')
-  //   ).map((road) => {
-  //     if (road.value === "motorway") {
-  //       setMotorway(true);
-  //     }
-
-  //     if (road.value === "trunk") {
-  //       setTrunk(true);
-  //     }
-
-  //     if (road.value === "primary") {
-  //       setPrimary(true);
-  //     }
-
-  //     return road.value;
-  //   });
-  //   // console.log(roads);
-
-  //   setRoadTypes(roads);
-
-  //   // setMotorway(prevState => !prevState)
-  //   // setTrunk(prevState => !prevState)
-  //   // setPrimary(prevState => !prevState)
-  // }
+  const [buffered, setBuffered] = React.useState({
+    type: "FeatureCollection",
+    features: [],
+  });
 
   const roadSelectionHandler = (event) => {
     let selectedRoadTypes = Array.from(
@@ -323,7 +307,7 @@ export default function Main() {
             type: "Feature",
             geometry: {
               type: "Point",
-              coordinates: [lat, lon],
+              coordinates: transform([lat, lon],"EPSG:31468", "EPSG:4326")
             },
             properties: {
               classes: propers,
@@ -351,7 +335,7 @@ export default function Main() {
 
         let topFeatures = classArray.map((klasse) => {
           //TODO set n dynamically
-          const n = 2;
+          const n = 1;
           return klasse.slice(0, n);
         });
 
@@ -360,7 +344,6 @@ export default function Main() {
           features: topFeatures.flat(),
         };
 
-        
         let segData = {
           type: "FeatureCollection",
           features: segmentationFeatures,
@@ -373,7 +356,7 @@ export default function Main() {
           new vector({
             features: new GeoJSON().readFeatures(segData),
           }).getExtent(),
-          "EPSG:31468",
+          "EPSG:4326",
           "EPSG:3857"
         );
 
@@ -425,52 +408,84 @@ export default function Main() {
   // ROUTING
 
   React.useEffect(() => {
-    // if (document.getElementById("roadNetwork").classList.contains("active")) {
+    if (isRoadLoaded) {
+      // console.log(roadNetwork);
+
+      const bufferdRoads = roadNetwork.features.slice(0, 20).map((feature) => {
+        console.log(feature);
+
+        //TODO insert buffer radius dynamically
+        let cellSize = 100/2
+
+        return buffer(feature, (cellSize * Math.sqrt(2)) /1000, {
+          units: "kilometers",
+        });
+
+      });
+
+      setBuffered({
+        type: "FeatureCollection",
+        features: bufferdRoads,
+      })
+
+      console.log(bufferdRoads)
+
+
+
+
+
+      const pointsInBuffer = bufferdRoads.map((bufferedRoad)=>{
+        return(pointsWithinPolygon(segmentationData, bufferedRoad))
+      })
+      console.log(pointsInBuffer)
+
+    }
+    // if (document.getElementById("route").classList.contains("active")) {
     //   setIsRoadActive((prevState) => !prevState);
     // }
 
-    let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219";
-    query += "?geometries=geojson";
+    // let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219";
+    // query += "?geometries=geojson";
 
-    // console.log(query);
+    // // console.log(query);
 
-    //     GET
-    // /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
-    // Example Requests
-    // 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
+    // //     GET
+    // // /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
+    // // Example Requests
+    // // 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
 
-    fetch("http://router.project-osrm.org/trip/v1/driving/" + query, {
-      method: "POST",
-      body: query,
-    })
-      .then((res) => {
-        // console.log(res);
+    // fetch("http://router.project-osrm.org/trip/v1/driving/" + query, {
+    //   method: "POST",
+    //   body: query,
+    // })
+    //   .then((res) => {
+    //     // console.log(res);
 
-        if (!res.ok) {
-          throw new Error("Network response was not OK");
-        } else {
-          // console.log("fetched!");
-        }
-        return res.text();
-      })
-      .then((data) => {
-        // console.log(data);
-        setRoute(data);
-        // let geojson = osm2geojson(data, {});
-        // console.log(geojson);
-        // const geojson = osmtogeojson(data);
-        // console.log(geojson);
-        // setGeoJSONObject(geojson);
-        // setRoadNetwork(geojson);
-        // setIsRoadLoaded(true);
-      })
-      .catch((error) => {
-        console.error(
-          "There has been a problem with your fetch operation:",
-          error
-        );
-      });
-  }, [loadRoadNetwork]);
+    //     if (!res.ok) {
+    //       throw new Error("Network response was not OK");
+    //     } else {
+    //       // console.log("fetched!");
+    //     }
+    //     return res.text();
+    //   })
+    //   .then((data) => {
+    //     // console.log(data);
+    //     setRoute(data);
+    //     // let geojson = osm2geojson(data, {});
+    //     // console.log(geojson);
+    //     // const geojson = osmtogeojson(data);
+    //     // console.log(geojson);
+    //     // setGeoJSONObject(geojson);
+    //     // setRoadNetwork(geojson);
+    //     // setIsRoadLoaded(true);
+    //   })
+    //   .catch((error) => {
+    //     console.error(
+    //       "There has been a problem with your fetch operation:",
+    //       error
+    //     );
+    //   });
+  }, [isRoadLoaded]);
 
   return (
     <main>
@@ -486,6 +501,7 @@ export default function Main() {
         topPoints={topPoints}
         showRoadNetwork={showRoadNetwork}
         roadNetwork={roadNetwork}
+        buffRoads={buffered}
         bbox={bboxObject}
         showRoute={showRoute}
         route={route}
