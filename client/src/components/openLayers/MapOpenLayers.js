@@ -80,24 +80,14 @@ let styles = {
   }),
 };
 
-proj4.defs(
-  "EPSG:31468",
-  "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
-);
-
-register(proj4);
 
 const MapOpenLayers = (props) => {
-
-
   // console.log(props)
 
   // var extent = [
   //   1212700.7209014362, 6733000.138551631, 1282400.298953579,
   //   6780300.3349028155,
   // ];
-
-  
 
   if (props.showSegmentation) {
     // console.log(props.segmentationData);
@@ -112,7 +102,6 @@ const MapOpenLayers = (props) => {
     // let extentIMG = new vector({
     //   features: new GeoJSON().readFeatures(props.segmentationData),
     // }).getExtent();
-
 
     // console.log(extentIMG);
 
@@ -165,39 +154,37 @@ const MapOpenLayers = (props) => {
     //   imageData.data[i + 3] = 100; // getRandomInt(255);  // A value
     // }
 
-    
-
-    if(props.segmentationClass =="maxClass"){
-
-    props.segmentationData.features.map((element) => {
-      // console.log(element);
-
-      // let index = element.properties.index*4;
-      const index = (element.properties.y * width + element.properties.x) * 4;
-      // console.log("index")
-      // console.log(index)
-
-      imageData.data[index + 0] = colors[(element.properties.maxClass-1)][0]; // R value
-      imageData.data[index + 1] = colors[(element.properties.maxClass-1)][1]; // G value
-      imageData.data[index + 2] = colors[(element.properties.maxClass-1)][2]; // B value
-      imageData.data[index + 3] = 100; // getRandomInt(255);  // A value
-    });}
-    else{
+    if (props.segmentationClass == "maxClass") {
       props.segmentationData.features.map((element) => {
-        // console.log("element")
-        // console.log(element.properties.classes[props.segmentationClass]);
-  
+        // console.log(element);
+
         // let index = element.properties.index*4;
         const index = (element.properties.y * width + element.properties.x) * 4;
         // console.log("index")
         // console.log(index)
-  
+
+        imageData.data[index + 0] = colors[element.properties.maxClass - 1][0]; // R value
+        imageData.data[index + 1] = colors[element.properties.maxClass - 1][1]; // G value
+        imageData.data[index + 2] = colors[element.properties.maxClass - 1][2]; // B value
+        imageData.data[index + 3] = 100; // getRandomInt(255);  // A value
+      });
+    } else {
+      props.segmentationData.features.map((element) => {
+        // console.log("element")
+        // console.log(element.properties.classes[props.segmentationClass]);
+
+        // let index = element.properties.index*4;
+        const index = (element.properties.y * width + element.properties.x) * 4;
+        // console.log("index")
+        // console.log(index)
+
         imageData.data[index + 0] = 0; // R value
         imageData.data[index + 1] = 0; // G value
         imageData.data[index + 2] = 0; // B value
-        imageData.data[index + 3] = 0.5*255+0.5*element.properties.classes[props.segmentationClass]*255; // getRandomInt(255);  // A value
+        imageData.data[index + 3] =
+          0.5 * 255 +
+          0.5 * element.properties.classes[props.segmentationClass] * 255; // getRandomInt(255);  // A value
       });
-  
     }
 
     // Draw image data to the canvas
@@ -210,7 +197,7 @@ const MapOpenLayers = (props) => {
       url: dataURL,
       projection: projection,
       imageExtent: extentIMG,
-      imageSmoothing: false
+      imageSmoothing: false,
     });
   }
 
@@ -223,14 +210,12 @@ const MapOpenLayers = (props) => {
   //   return color;
   // }
 
-
-
   return (
     <div className="map-container">
-      <Map 
-      center={fromLonLat(props.center)} 
-      zoom={props.zoom}
-      extent={props.extent} 
+      <Map
+        center={fromLonLat(props.center)}
+        zoom={props.zoom}
+        extent={props.extent}
       >
         <Layers>
           {/* BaseMap */}
@@ -238,30 +223,29 @@ const MapOpenLayers = (props) => {
           {/* Segmentation Raster */}
           {props.showSegmentation && <ImageLayer source={sourceImage} />}
           {/* top points */}
-          {props.showSegmentation && props.showTopPoints &&(
+          {props.showSegmentation && props.showTopPoints && (
             <VectorLayer
-            source={vector({
-              features: new GeoJSON({
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857'
-              }).readFeatures(props.topPoints),
-            })}
-            style={function(feature){
-              // console.log(feature)
-              return new Style({
-                image: new CircleStyle({
-                  radius: 10,
-                  fill: new Fill({
-                    color: colors[feature.values_.maxClass],
+              source={vector({
+                features: new GeoJSON({
+                  dataProjection: "EPSG:4326",
+                  featureProjection: "EPSG:3857",
+                }).readFeatures(props.topPoints),
+              })}
+              style={function (feature) {
+                // console.log(feature)
+                return new Style({
+                  image: new CircleStyle({
+                    radius: 10,
+                    fill: new Fill({
+                      color: colors[feature.values_.maxClass],
+                    }),
+                    stroke: new Stroke({
+                      color: colors[feature.values_.maxClass],
+                    }),
                   }),
-                  stroke: new Stroke({
-                    color: colors[feature.values_.maxClass],
-                  }),
-                }),
-              })
-            }}
-          />
-
+                });
+              }}
+            />
           )}
 
           {/* GEOJSON OF RASTER DATA */}
@@ -277,7 +261,7 @@ const MapOpenLayers = (props) => {
             />
           )}
            */}
-           {/* RoadNetwork */}
+          {/* RoadNetwork */}
           {props.showRoadNetwork && props.roadNetwork && (
             <VectorLayer
               source={vector({
@@ -310,7 +294,7 @@ const MapOpenLayers = (props) => {
               style={styles.LineGreen}
               zIndex={1}
             />
-          )} 
+          )}
           {/* Route */}
           {props.route && (
             <VectorLayer

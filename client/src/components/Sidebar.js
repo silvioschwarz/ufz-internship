@@ -83,14 +83,19 @@ export default function Sidebar(props) {
                     )}
                   </div>
                   <br />
-                  <select id="EPSG" name="EPSG">
-                    <option>Select EPSG</option>
-                    <option disabled>_________</option>
-                    <option>4326</option>
-                    <option>35644764</option>
-                    <option>4</option>
-                    <option>4446</option>
-                  </select>
+                  <form onSubmit={props.handleEPSG}>
+                    <label>
+                      EPSG:
+                      <input 
+                      id="EPSG"
+                      name="EPSG"
+                      type="text" 
+                      onChange={event => props.setEPSG(event.target.value)}
+                      value={props.EPSG}
+                      className="form-control" />
+                    </label>
+                    <input type="submit" /> 
+                  </form>
                 </div>
                 {/* Segmentation Class Selection */}
                 {props.isSegmentationSelected && (
@@ -110,7 +115,6 @@ export default function Sidebar(props) {
                     <option disabled>_________</option>
                     {classElements}
                   </select>
-                  
                 )}
                 {/* Show Segmentation */}
                 <input
@@ -124,14 +128,16 @@ export default function Sidebar(props) {
                 {/* show top points */}
                 {props.isSegmentationSelected && (
                   <label>
-                  <input
-                  type="checkbox"
-                  checked={props.showTopPoints}
-                  onChange={(event) =>
-                    props.setShowTopPoints(event.target.checked)
-                  }
-                />{" "}Show Top Points</label>
-)}
+                    <input
+                      type="checkbox"
+                      checked={props.showTopPoints}
+                      onChange={(event) =>
+                        props.setShowTopPoints(event.target.checked)
+                      }
+                    />{" "}
+                    Show Top Points
+                  </label>
+                )}
                 {/* <input
                   type="checkbox"
                   checked={props.showRoadNetwork}

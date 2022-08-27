@@ -19,24 +19,12 @@ import { vector } from "./openLayers/Source";
 import { extent } from "ol/extent";
 
 import buffer from "@turf/buffer";
-import pointsWithinPolygon from "@turf/points-within-polygon"
+import pointsWithinPolygon from "@turf/points-within-polygon";
 
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
 
-// proj4.defs(
-//   "EPSG:31468",
-//   "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
-// );
 
-// register(proj4);
-
-proj4.defs(
-  "EPSG:31468",
-  "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
-);
-
-register(proj4);
 
 export default function Main() {
   //MAP
@@ -66,6 +54,78 @@ export default function Main() {
     type: "FeatureCollection",
     features: [],
   });
+
+  const [EPSG, setEPSG] = React.useState("");
+
+  const handleEPSG = (event) => {
+    event.preventDefault();
+    console.log(EPSG);
+    setEPSG(EPSG);
+
+    fetch("https://epsg.io/?format=json&q=" + EPSG)
+      .then((res) => {
+        console.log(res);
+
+        if (!res.ok) {
+          throw new Error("Network response was not OK");
+        } else {
+          console.log("fetched!");
+        }
+        return res.text();
+      })
+      .then((data) => {
+        console.log(JSON.parse(data).results[0].proj4);
+        setSegmentationProjection([
+          "EPSG:" + EPSG,
+          JSON.parse(data).results[0].proj4,
+        ]);
+      })
+      .catch((error) => {
+        console.error(
+          "There has been a problem with your fetch operation:",
+          error
+        );
+      });
+
+    proj4.defs(
+      "EPSG:31468",
+      "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
+    );
+
+    register(proj4);
+  };
+
+  // React.useEffect(()=>{
+  //   if(EPSG){
+  //   fetch("https://epsg.io/?format=json&q=" + EPSG)
+  //     .then((res) => {
+  //       console.log(res);
+
+  //       if (!res.ok) {
+  //         throw new Error("Network response was not OK");
+  //       } else {
+  //         console.log("fetched!");
+  //       }
+  //       return res.text();
+  //     })
+  //     .then((data) => {
+  //       console.log(JSON.parse(data).results[0].proj4);
+  //       setSegmentationProjection([
+  //         "EPSG:" + EPSG,
+  //         JSON.parse(data).results[0].proj4,
+  //       ]);
+  //     })
+  //     .catch((error) => {
+  //       console.error(
+  //         "There has been a problem with your fetch operation:",
+  //         error
+  //       );
+  //     });
+  //   }
+
+  // },[EPSG])
+
+  console.log(EPSG);
 
   //ROAD NETWORK
 
@@ -267,7 +327,7 @@ export default function Main() {
 
   React.useEffect(() => {
     // if (isMounted.current) {
-    if (isSegmentationSelected) {
+    if (isSegmentationSelected && EPSG) {
       // console.log(segmentationFile.name);
 
       segmentationFile.text().then((res) => {
@@ -307,7 +367,7 @@ export default function Main() {
             type: "Feature",
             geometry: {
               type: "Point",
-              coordinates: transform([lat, lon],"EPSG:31468", "EPSG:4326")
+              coordinates: transform([lat, lon], "EPSG:"+EPSG, "EPSG:4326"),
             },
             properties: {
               classes: propers,
@@ -376,7 +436,7 @@ export default function Main() {
       });
     }
     // }
-  }, [segmentationFile]);
+  }, [segmentationProjection]);
 
   if (showSegmentation) {
     const tabElement = document.getElementById("tab-segmentation").firstChild;
@@ -433,10 +493,10 @@ export default function Main() {
 
       // });
 
-      let score = []
-      const cellWidth = 100/2
-      const cellHeigth = 100/2
-      const bufferRadius = Math.sqrt(cellWidth**2 + cellHeigth**2)
+      let score = [];
+      const cellWidth = 100 / 2;
+      const cellHeigth = 100 / 2;
+      const bufferRadius = Math.sqrt(cellWidth ** 2 + cellHeigth ** 2);
 
       // roadNetwork.features.slice(0,20).forEach(road => {
 
@@ -453,54 +513,51 @@ export default function Main() {
       //   })
       //   console.log(bufferScore)
 
-    
       //   console.log(pointsInBuffer)
-
 
       // });
 
-      const topCoord = topPoints.features.map((point)=>{
-        return(point.geometry.coordinates)
-      })
-      let query1 = topCoord.join(";")
-      query1+="?geometries=geojson";
-      console.log(query1)
-
-    fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
-      method: "POST",
-      body: query1,
-    })
-      .then((res) => {
-        console.log(res);
-
-        if (!res.ok) {
-          throw new Error("Network response was not OK");
-        } else {
-          console.log("fetched!");
-        }
-        return res.text();
-      })
-      .then((data) => {
-        console.log(JSON.parse(data).trips[0].geometry)
-        let routeGeoJSON =
-        {
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: JSON.parse(data).trips[0].geometry
-            }
-          ]
-        }
-
-        setRoute(routeGeoJSON);
-      })
-      .catch((error) => {
-        console.error(
-          "There has been a problem with your fetch operation:",
-          error
-        );
+      const topCoord = topPoints.features.map((point) => {
+        return point.geometry.coordinates;
       });
+      let query1 = topCoord.join(";");
+      query1 += "?geometries=geojson";
+      console.log(query1);
+
+      fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
+        method: "POST",
+        body: query1,
+      })
+        .then((res) => {
+          console.log(res);
+
+          if (!res.ok) {
+            throw new Error("Network response was not OK");
+          } else {
+            console.log("fetched!");
+          }
+          return res.text();
+        })
+        .then((data) => {
+          console.log(JSON.parse(data).trips[0].geometry);
+          let routeGeoJSON = {
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                geometry: JSON.parse(data).trips[0].geometry,
+              },
+            ],
+          };
+
+          setRoute(routeGeoJSON);
+        })
+        .catch((error) => {
+          console.error(
+            "There has been a problem with your fetch operation:",
+            error
+          );
+        });
 
       // setBuffered({
       //   type: "FeatureCollection",
@@ -509,27 +566,20 @@ export default function Main() {
 
       // console.log(bufferdRoads)
 
-
-
-
-
       // const pointsInBuffer = bufferdRoads.map((bufferedRoad)=>{
       //   return(pointsWithinPolygon(segmentationData, bufferedRoad))
       // })
       // console.log(pointsInBuffer)
 
-      //score 
+      //score
       // +1 for maxclass
       // const score = pointsInBuffer.map((bufferRoad) =>{
       //   console.log(bufferRoad.features.map((feature)=>{
       //     console.log(feature.properties.classes)
       //   }))
       // })
-
     }
-    
   }, [isRoadLoaded]);
-
 
   return (
     <main>
@@ -557,6 +607,9 @@ export default function Main() {
         setShowSegmentation={setShowSegmentation}
         segmentationProjection={segmentationProjection}
         setSegmentationProjection={setSegmentationProjection}
+        EPSG={EPSG}
+        setEPSG={setEPSG}
+        handleEPSG={handleEPSG}
         setSegmentationClass={setSegmentationClass}
         classes={classes}
         showTopPoints={showTopPoints}
