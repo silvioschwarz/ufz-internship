@@ -210,6 +210,7 @@ const MapOpenLayers = (props) => {
       url: dataURL,
       projection: projection,
       imageExtent: extentIMG,
+      imageSmoothing: false
     });
   }
 
@@ -288,7 +289,7 @@ const MapOpenLayers = (props) => {
             />
           )}
           {/* buffered Roads */}
-          {props.showRoadNetwork && props.roadNetwork && (
+          {/* {props.showRoadNetwork && props.roadNetwork && (
             <VectorLayer
               source={vector({
                 features: new GeoJSON().readFeatures(props.buffRoads, {
@@ -297,7 +298,7 @@ const MapOpenLayers = (props) => {
               })}
               style={styles.MultiPolygon}
             />
-          )}
+          )} */}
           {/* BoundingBox */}
           {props.showRoadNetwork && props.roadNetwork && (
             <VectorLayer
@@ -311,17 +312,17 @@ const MapOpenLayers = (props) => {
             />
           )} 
           {/* Route */}
-          {/* {props.showRoute && props.Route && (
+          {props.route && (
             <VectorLayer
               source={vector({
-                features: new GeoJSON().readFeatures(props.Route, {
+                features: new GeoJSON().readFeatures(props.route, {
                   featureProjection: get("EPSG:3857"),
                 }),
               })}
-              style={styles.Line}
+              style={styles.LineGreen}
               zIndex={1}
             />
-          )} */}
+          )}
         </Layers>
         <Controls>
           <FullScreenControl />

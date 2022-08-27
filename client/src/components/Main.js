@@ -335,7 +335,7 @@ export default function Main() {
 
         let topFeatures = classArray.map((klasse) => {
           //TODO set n dynamically
-          const n = 1;
+          const n = 2;
           return klasse.slice(0, n);
         });
 
@@ -406,86 +406,130 @@ export default function Main() {
     return arr.slice(0, -1);
   }
   // ROUTING
+  //best points
+  //best points  on road
+  //max score along path
 
   React.useEffect(() => {
     if (isRoadLoaded) {
       // console.log(roadNetwork);
 
-      const bufferdRoads = roadNetwork.features.slice(0, 20).map((feature) => {
-        console.log(feature);
+      // const bufferdRoads = roadNetwork.features.map((feature) => {
+      //   // console.log(feature);
 
-        //TODO insert buffer radius dynamically
-        let cellSize = 100/2
+      //   //TODO insert buffer radius dynamically
+      //   const cellWidth = 100/2
+      //   const cellHeigth = 100/2
+      //   const bufferRadius = Math.sqrt(cellWidth**2 + cellHeigth**2)
 
-        return buffer(feature, (cellSize * Math.sqrt(2)) /1000, {
-          units: "kilometers",
-        });
+      //   let bufferedRoad = buffer(feature, (bufferRadius) /1000, {
+      //     units: "kilometers",
+      //   });
 
+      //   let pointsInBuffer = pointsWithinPolygon(segmentationData, bufferedRoad)
+      //   if(pointsInBuffer.features.length >0){
+      //      console.log(pointsInBuffer)
+      //     }
+
+      // });
+
+      let score = []
+      const cellWidth = 100/2
+      const cellHeigth = 100/2
+      const bufferRadius = Math.sqrt(cellWidth**2 + cellHeigth**2)
+
+      // roadNetwork.features.slice(0,20).forEach(road => {
+
+      //   let bufferedRoad = buffer(road, (bufferRadius) /1000, {
+      //     units: "kilometers",
+      //   });
+
+      //   let pointsInBuffer = pointsWithinPolygon(segmentationData, bufferedRoad)
+
+      //   let bufferScore = []
+      //   pointsInBuffer.features.forEach((feature) =>{
+      //     bufferScore = bufferScore +Array.from(Object.values(feature.properties.classes))
+
+      //   })
+      //   console.log(bufferScore)
+
+    
+      //   console.log(pointsInBuffer)
+
+
+      // });
+
+      const topCoord = topPoints.features.map((point)=>{
+        return(point.geometry.coordinates)
+      })
+      let query1 = topCoord.join(";")
+      query1+="?geometries=geojson";
+      console.log(query1)
+
+    fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
+      method: "POST",
+      body: query1,
+    })
+      .then((res) => {
+        console.log(res);
+
+        if (!res.ok) {
+          throw new Error("Network response was not OK");
+        } else {
+          console.log("fetched!");
+        }
+        return res.text();
+      })
+      .then((data) => {
+        console.log(JSON.parse(data).trips[0].geometry)
+        let routeGeoJSON =
+        {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: JSON.parse(data).trips[0].geometry
+            }
+          ]
+        }
+
+        setRoute(routeGeoJSON);
+      })
+      .catch((error) => {
+        console.error(
+          "There has been a problem with your fetch operation:",
+          error
+        );
       });
 
-      setBuffered({
-        type: "FeatureCollection",
-        features: bufferdRoads,
-      })
+      // setBuffered({
+      //   type: "FeatureCollection",
+      //   features: bufferdRoads,
+      // })
 
-      console.log(bufferdRoads)
-
-
+      // console.log(bufferdRoads)
 
 
 
-      const pointsInBuffer = bufferdRoads.map((bufferedRoad)=>{
-        return(pointsWithinPolygon(segmentationData, bufferedRoad))
-      })
-      console.log(pointsInBuffer)
+
+
+      // const pointsInBuffer = bufferdRoads.map((bufferedRoad)=>{
+      //   return(pointsWithinPolygon(segmentationData, bufferedRoad))
+      // })
+      // console.log(pointsInBuffer)
+
+      //score 
+      // +1 for maxclass
+      // const score = pointsInBuffer.map((bufferRoad) =>{
+      //   console.log(bufferRoad.features.map((feature)=>{
+      //     console.log(feature.properties.classes)
+      //   }))
+      // })
 
     }
-    // if (document.getElementById("route").classList.contains("active")) {
-    //   setIsRoadActive((prevState) => !prevState);
-    // }
-
-    // let query = "13.388860,52.517037;13.397634,52.529407;13.428555,52.523219";
-    // query += "?geometries=geojson";
-
-    // // console.log(query);
-
-    // //     GET
-    // // /trip/v1/{profile}/{coordinates}?roundtrip={true|false}&source{any|first}&destination{any|last}&steps={true|false}&geometries={polyline|polyline6|geojson}&overview={simplified|full|false}&annotations={true|false}'
-    // // Example Requests
-    // // 'http://router.project-osrm.org/trip/v1/driving/13.388860,52.517037;13.397634,52.529407;13.428555,52.523219'
-
-    // fetch("http://router.project-osrm.org/trip/v1/driving/" + query, {
-    //   method: "POST",
-    //   body: query,
-    // })
-    //   .then((res) => {
-    //     // console.log(res);
-
-    //     if (!res.ok) {
-    //       throw new Error("Network response was not OK");
-    //     } else {
-    //       // console.log("fetched!");
-    //     }
-    //     return res.text();
-    //   })
-    //   .then((data) => {
-    //     // console.log(data);
-    //     setRoute(data);
-    //     // let geojson = osm2geojson(data, {});
-    //     // console.log(geojson);
-    //     // const geojson = osmtogeojson(data);
-    //     // console.log(geojson);
-    //     // setGeoJSONObject(geojson);
-    //     // setRoadNetwork(geojson);
-    //     // setIsRoadLoaded(true);
-    //   })
-    //   .catch((error) => {
-    //     console.error(
-    //       "There has been a problem with your fetch operation:",
-    //       error
-    //     );
-    //   });
+    
   }, [isRoadLoaded]);
+
 
   return (
     <main>
