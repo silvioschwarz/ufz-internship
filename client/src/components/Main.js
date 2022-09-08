@@ -15,16 +15,22 @@ import {
   Projection,
 } from "ol/proj";
 import GeoJSON from "ol/format/GeoJSON";
+import KML from "ol/format/KML"
+import GPX from "ol/format/GPX"
+
 import { vector } from "./openLayers/Source";
 import { extent } from "ol/extent";
 
 import buffer from "@turf/buffer";
 import pointsWithinPolygon from "@turf/points-within-polygon";
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import union from "@turf/union";
 
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
+import { Icon } from "ol/style";
 
-
+var startEndCoords  =[]
 
 export default function Main() {
   //MAP
@@ -55,16 +61,17 @@ export default function Main() {
     features: [],
   });
 
+  const [cellWidth, setCellWidth] = React.useState(false);
+  const [cellHeigth, setCellHeight] = React.useState(false);
+
   const [EPSG, setEPSG] = React.useState("");
 
   const handleEPSG = (event) => {
     event.preventDefault();
-    console.log(EPSG);
-    setEPSG(EPSG);
 
     fetch("https://epsg.io/?format=json&q=" + EPSG)
       .then((res) => {
-        console.log(res);
+        // console.log(res);
 
         if (!res.ok) {
           throw new Error("Network response was not OK");
@@ -74,11 +81,15 @@ export default function Main() {
         return res.text();
       })
       .then((data) => {
-        console.log(JSON.parse(data).results[0].proj4);
+        // console.log(JSON.parse(data).results[0].proj4);
         setSegmentationProjection([
           "EPSG:" + EPSG,
           JSON.parse(data).results[0].proj4,
         ]);
+
+        proj4.defs("EPSG:" + EPSG, JSON.parse(data).results[0].proj4);
+
+        register(proj4);
       })
       .catch((error) => {
         console.error(
@@ -87,45 +98,8 @@ export default function Main() {
         );
       });
 
-    proj4.defs(
-      "EPSG:31468",
-      "+proj=tmerc +lat_0=0 +lon_0=12 +k=1 +x_0=4500000 +y_0=0 +ellps=bessel +towgs84=598.1,73.7,418.2,0.202,0.045,-2.455,6.7 +units=m +no_defs"
-    );
-
-    register(proj4);
+    setEPSG(EPSG);
   };
-
-  // React.useEffect(()=>{
-  //   if(EPSG){
-  //   fetch("https://epsg.io/?format=json&q=" + EPSG)
-  //     .then((res) => {
-  //       console.log(res);
-
-  //       if (!res.ok) {
-  //         throw new Error("Network response was not OK");
-  //       } else {
-  //         console.log("fetched!");
-  //       }
-  //       return res.text();
-  //     })
-  //     .then((data) => {
-  //       console.log(JSON.parse(data).results[0].proj4);
-  //       setSegmentationProjection([
-  //         "EPSG:" + EPSG,
-  //         JSON.parse(data).results[0].proj4,
-  //       ]);
-  //     })
-  //     .catch((error) => {
-  //       console.error(
-  //         "There has been a problem with your fetch operation:",
-  //         error
-  //       );
-  //     });
-  //   }
-
-  // },[EPSG])
-
-  console.log(EPSG);
 
   //ROAD NETWORK
 
@@ -158,6 +132,7 @@ export default function Main() {
   ];
 
   // Route
+  const [numTopPoints, setNumTopPoints] = React.useState(1);
   const [route, setRoute] = React.useState();
   const [showRoute, setShowRoute] = React.useState(false);
 
@@ -166,6 +141,8 @@ export default function Main() {
     features: [],
   });
 
+  const[excludedRoad, setExcludedRoad]  =React.useState([])
+
   const roadSelectionHandler = (event) => {
     let selectedRoadTypes = Array.from(
       document.querySelectorAll('.roadTypes input[type="checkbox"]:checked')
@@ -173,6 +150,12 @@ export default function Main() {
     // console.log("roadSelection")
     // console.log(selectedRoadTypes)
     setRoadSelection(selectedRoadTypes);
+
+    let excludedRoadTypes = Array.from(
+      document.querySelectorAll('.roadTypes input[type="checkbox"]:not(:checked)')
+    ).map((road) => road.value);
+
+    setExcludedRoad(excludedRoadTypes);
 
     // console.log(geoJSONObject)
 
@@ -286,10 +269,6 @@ export default function Main() {
             ],
           ],
         },
-        properties: {
-          prop0: "value0",
-          prop1: { this: "that" },
-        },
       },
     ],
   };
@@ -335,10 +314,16 @@ export default function Main() {
 
         const lons = [...new Set(data.map((item) => item.Longitude))].sort();
         const lats = [...new Set(data.map((item) => item.Latitude))].sort();
-        let width = lats.length;
-        let height = lons.length;
-        let xIntervall = (Math.max(...lats) - Math.min(...lats)) / (width - 1);
-        let yIntervall = (Math.max(...lons) - Math.min(...lons)) / (height - 1);
+        let width = lats.length - 1;
+        let height = lons.length - 1;
+        let xIntervall = (Math.max(...lats) - Math.min(...lats)) / width;
+        let yIntervall = (Math.max(...lons) - Math.min(...lons)) / height;
+
+        setCellWidth(xIntervall);
+        setCellHeight(yIntervall);
+
+        // console.log([width,height])
+        // console.log([xIntervall,yIntervall])
 
         let xMin = Math.min(...lats);
         let xMax = Math.max(...lats);
@@ -351,10 +336,10 @@ export default function Main() {
 
         let segmentationFeatures = [];
 
-        const temp = data.map((element) => {
+        data.map((element) => {
           let { Latitude: lat, Longitude: lon, ...propers } = element;
           let x = (lat - xMin) / xIntervall;
-          let y = (lon - yMax) / -yIntervall;
+          let y = (yMax - lon) / yIntervall;
 
           let index = y * width + x;
 
@@ -367,7 +352,7 @@ export default function Main() {
             type: "Feature",
             geometry: {
               type: "Point",
-              coordinates: transform([lat, lon], "EPSG:"+EPSG, "EPSG:4326"),
+              coordinates: transform([lat, lon], "EPSG:" + EPSG, "EPSG:4326"),
             },
             properties: {
               classes: propers,
@@ -379,6 +364,7 @@ export default function Main() {
           });
         });
 
+        // sort segmentation data descending for each class
         let classArray = segmentationClasses.map((element) => {
           return segmentationFeatures
             .filter((feature) => {
@@ -395,7 +381,7 @@ export default function Main() {
 
         let topFeatures = classArray.map((klasse) => {
           //TODO set n dynamically
-          const n = 2;
+          const n = numTopPoints;
           return klasse.slice(0, n);
         });
 
@@ -435,8 +421,7 @@ export default function Main() {
         setShowSegmentation((prevState) => !prevState);
       });
     }
-    // }
-  }, [segmentationProjection]);
+  }, [segmentationProjection, numTopPoints]);
 
   if (showSegmentation) {
     const tabElement = document.getElementById("tab-segmentation").firstChild;
@@ -446,6 +431,11 @@ export default function Main() {
 
   if (loadRoadNetwork) {
     const tabElement = document.getElementById("tab-roadnetwork").firstChild;
+    tabElement.classList.add("done");
+  }
+
+  if (route) {
+    const tabElement = document.getElementById("tab-route").firstChild;
     tabElement.classList.add("done");
   }
 
@@ -470,108 +460,36 @@ export default function Main() {
   //best points  on road
   //max score along path
 
+  // trying to find the points closest to road via points in buffer polygon lets browser freeze
+
   React.useEffect(() => {
     if (isRoadLoaded) {
       // console.log(roadNetwork);
 
-      // const bufferdRoads = roadNetwork.features.map((feature) => {
-      //   // console.log(feature);
-
-      //   //TODO insert buffer radius dynamically
-      //   const cellWidth = 100/2
-      //   const cellHeigth = 100/2
-      //   const bufferRadius = Math.sqrt(cellWidth**2 + cellHeigth**2)
-
-      //   let bufferedRoad = buffer(feature, (bufferRadius) /1000, {
-      //     units: "kilometers",
-      //   });
-
-      //   let pointsInBuffer = pointsWithinPolygon(segmentationData, bufferedRoad)
-      //   if(pointsInBuffer.features.length >0){
-      //      console.log(pointsInBuffer)
-      //     }
-
-      // });
-
-      let score = [];
-      const cellWidth = 100 / 2;
-      const cellHeigth = 100 / 2;
       const bufferRadius = Math.sqrt(cellWidth ** 2 + cellHeigth ** 2);
 
-      // roadNetwork.features.slice(0,20).forEach(road => {
+      // let pointsOnRoad = []
 
-      //   let bufferedRoad = buffer(road, (bufferRadius) /1000, {
+      // roadNetwork.features.forEach((feature) => {
+      //   // console.log(feature)
+
+      //   let bufferedRoad = buffer(feature, bufferRadius / 1000, {
       //     units: "kilometers",
       //   });
 
+      //   // let boolPointInBuffer = segmentationData.features.forEach(
+      //   //   (point) => booleanPointInPolygon(point, bufferedRoad))
+
       //   let pointsInBuffer = pointsWithinPolygon(segmentationData, bufferedRoad)
-
-      //   let bufferScore = []
-      //   pointsInBuffer.features.forEach((feature) =>{
-      //     bufferScore = bufferScore +Array.from(Object.values(feature.properties.classes))
-
-      //   })
-      //   console.log(bufferScore)
-
-      //   console.log(pointsInBuffer)
-
       // });
 
-      const topCoord = topPoints.features.map((point) => {
-        return point.geometry.coordinates;
-      });
-      let query1 = topCoord.join(";");
-      query1 += "?geometries=geojson";
-      console.log(query1);
-
-      fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
-        method: "POST",
-        body: query1,
-      })
-        .then((res) => {
-          console.log(res);
-
-          if (!res.ok) {
-            throw new Error("Network response was not OK");
-          } else {
-            console.log("fetched!");
-          }
-          return res.text();
-        })
-        .then((data) => {
-          console.log(JSON.parse(data).trips[0].geometry);
-          let routeGeoJSON = {
-            type: "FeatureCollection",
-            features: [
-              {
-                type: "Feature",
-                geometry: JSON.parse(data).trips[0].geometry,
-              },
-            ],
-          };
-
-          setRoute(routeGeoJSON);
-        })
-        .catch((error) => {
-          console.error(
-            "There has been a problem with your fetch operation:",
-            error
-          );
-        });
-
-      // setBuffered({
-      //   type: "FeatureCollection",
-      //   features: bufferdRoads,
+      // segmentationData.features.filter((feature) =>{
+      //   return(boolea)
       // })
 
-      // console.log(bufferdRoads)
+      // console.log(pointsOnRoad.flat().sclice(0,20))
 
-      // const pointsInBuffer = bufferdRoads.map((bufferedRoad)=>{
-      //   return(pointsWithinPolygon(segmentationData, bufferedRoad))
-      // })
-      // console.log(pointsInBuffer)
-
-      //score
+      // score
       // +1 for maxclass
       // const score = pointsInBuffer.map((bufferRoad) =>{
       //   console.log(bufferRoad.features.map((feature)=>{
@@ -581,12 +499,201 @@ export default function Main() {
     }
   }, [isRoadLoaded]);
 
+  const [osmrData, setOsmrData] = React.useState();
+
+  const handleRoute = (event) => {
+    event.preventDefault();
+
+    const topCoord = topPoints.features.map((point) => {
+      return point.geometry.coordinates;
+    });
+
+
+    let query1="";
+
+    if(startEndCoord.length > 1){
+      query1 += startEndCoord[0].geometry.coordinates.join(",") +";"
+      query1 += topCoord.join(";");
+      query1 += ";"+startEndCoord[1].geometry.coordinates.join(",");
+      query1 += "?source=first&destination=last";
+      query1 += "&roundtrip=false"
+      query1 += "&geometries=geojson";
+
+    }else{
+      query1 = topCoord.join(";");
+      query1 += "?geometries=geojson";
+
+    }
+    // {"message":"Exclude flag combination is not supported.","code":"InvalidValue"}
+    // if(excludedRoad.length>0){
+    //       query1 +="&exclude=" +excludedRoad.join(",")
+    // }
+    
+    
+
+    
+    console.log(query1);
+
+    fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
+      method: "GET",
+    })
+      .then((res) => {
+        console.log(res);
+
+        if (!res.ok) {
+          throw new Error("Network response was not OK");
+        } else {
+          console.log("fetched!");
+        }
+        return res.text();
+      })
+      .then((data) => {
+        setOsmrData(data);
+        console.log(JSON.parse(data).trips[0].geometry);
+        let routeGeoJSON = {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: JSON.parse(data).trips[0].geometry,
+            },
+          ],
+        };
+
+        setRoute(routeGeoJSON);
+      })
+      .catch((error) => {
+        console.error(
+          "There has been a problem with your fetch operation:",
+          error
+        );
+      });
+
+    setShowRoadNetwork(false);
+    setShowTopPoints(true);
+  };
+
+  //EXPORT
+  // since everything is done inthe browser, download via a link to a blob
+
+  const [output, setOutput] = React.useState("");
+
+  // URL pointing to the Blob with the file contents
+  var objUrl = null;
+  // create the blob with file content, and attach the URL to the downloadlink;
+  // NB: link must have the download attribute
+  // this method can go to your library
+  function exportFile() {
+    // revoke the old object URL to avoid memory leaks.
+    if (objUrl !== null) {
+      window.URL.revokeObjectURL(objUrl);
+    }
+    // create the object that contains the file data and that can be referred to with a URL
+    var data = new Blob([osmrData], { type: "text/plain" });
+    objUrl = window.URL.createObjectURL(data);
+    // attach the object to the download link (styled as button)
+    var downloadLinkButton = document.createElement("a");
+    downloadLinkButton.download = "export.geojson";
+    downloadLinkButton.href = objUrl;
+    downloadLinkButton.click();
+  }
+
+  // Export as KML
+  function exportFile2() {
+    // revoke the old object URL to avoid memory leaks.
+    if (objUrl !== null) {
+      window.URL.revokeObjectURL(objUrl);
+    }
+    let routeSource =  new vector({
+      features: (new GeoJSON()).readFeatures(route)
+    })
+ 
+    var kml = new KML().writeFeatures(routeSource.getFeatures(),{
+      featureProjection:"EPSG:4326"
+    });
+    // create the object that contains the file data and that can be referred to with a URL
+    var data = new Blob([kml], { type: "text/plain" });
+    objUrl = window.URL.createObjectURL(data);
+    // attach the object to the download link (styled as button)
+    var downloadLinkButton = document.createElement("a");
+    downloadLinkButton.download = "export.kml";
+    downloadLinkButton.href = objUrl;
+    downloadLinkButton.click();
+  }
+
+  //Export as GPX
+  function exportFile3() {
+    // revoke the old object URL to avoid memory leaks.
+    if (objUrl !== null) {
+      window.URL.revokeObjectURL(objUrl);
+    }
+
+    let routeSource =  new vector({
+      features: (new GeoJSON()).readFeatures(route)
+    })
+ 
+    var gpx = new GPX().writeFeatures(routeSource.getFeatures(),{
+      featureProjection:"EPSG:4326"
+    });
+    // create the object that contains the file data and that can be referred to with a URL
+    var data = new Blob([gpx], { type: "text/plain" });
+    objUrl = window.URL.createObjectURL(data);
+    // attach the object to the download link (styled as button)
+    var downloadLinkButton = document.createElement("a");
+    downloadLinkButton.download = "export.gpx";
+    downloadLinkButton.href = objUrl;
+    downloadLinkButton.click();
+  }
+
+  // add start and end point
+
+  const [clickedCoord, setClickedCoord] = React.useState(false);
+  const [showStartEndPoint, setShowStartEndPoint] = React.useState(false);
+  const [startEndCoord, setStartEndCoord] = React.useState([])
+
+  let startEndGeoJSON = {
+    type: "FeatureCollection",
+    features: startEndCoord,
+  };
+
+
+
+  React.useEffect(() => {
+    if (isRoadLoaded &&  clickedCoord != false) {
+      setShowStartEndPoint(false)
+
+      startEndCoords.push({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: transform(clickedCoord, "EPSG:3857", "EPSG:4326"),
+        },
+      });
+
+      if (startEndCoords.length > 2) {
+        startEndCoords=[];
+      }
+      setStartEndCoord(startEndCoords)
+
+      setTimeout(function () {
+        setShowStartEndPoint(true);
+      }, 500);
+
+    
+    }
+     
+
+  }, [clickedCoord]);
+
+
   return (
     <main>
       <MapOpenLayers
         zoom={zoom}
         center={center}
         extent={extent}
+        clickedCoord={clickedCoord}
+        setClickedCoord={setClickedCoord}
         showSegmentation={showSegmentation}
         segmentationData={segmentationData}
         segmentationProjection={segmentationProjection}
@@ -599,6 +706,8 @@ export default function Main() {
         bbox={bboxObject}
         showRoute={showRoute}
         route={route}
+        startEndGeoJSON={startEndGeoJSON}
+        showStartEndPoint={showStartEndPoint}
       />
       <Sidebar
         segmentationHandler={segmentationHandler}
@@ -607,6 +716,8 @@ export default function Main() {
         setShowSegmentation={setShowSegmentation}
         segmentationProjection={segmentationProjection}
         setSegmentationProjection={setSegmentationProjection}
+        numTopPoints={numTopPoints}
+        setNumTopPoints={setNumTopPoints}
         EPSG={EPSG}
         setEPSG={setEPSG}
         handleEPSG={handleEPSG}
@@ -625,6 +736,11 @@ export default function Main() {
         setLoadRoadNetwork={setLoadRoadNetwork}
         roadTypes={roadTypes}
         setRoadTypes={setRoadTypes}
+        handleRoute={handleRoute}
+        route={route}
+        exportFile={exportFile}
+        exportFile2={exportFile2}
+        exportFile3={exportFile3}
       />
     </main>
   );

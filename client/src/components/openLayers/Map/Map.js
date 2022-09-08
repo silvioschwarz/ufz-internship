@@ -5,7 +5,7 @@ import * as ol from "ol";
 // import {defaults as defaultControls} from 'ol/control';
 
 
-const Map = ({ children, zoom, center, extent, padding}) => {
+const Map = ({ children, zoom, center, extent, setClickedCoord}) => {
 	const mapRef = useRef();
 	const [map, setMap] = useState(null);
 
@@ -49,6 +49,16 @@ const Map = ({ children, zoom, center, extent, padding}) => {
 			padding: [150, 150, 150, 150],
 		  })
 	}, [extent])
+
+	//get coord of mouse
+	useEffect(()=>{
+		if(!map) return;
+		map.on("click", (evt)=>{
+			// console.log(evt.coordinate)
+			setClickedCoord(evt.coordinate)
+		})
+
+	})
 
 	return (
 		<MapContext.Provider value={{ map }}>

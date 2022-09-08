@@ -96,9 +96,11 @@ export default function Sidebar(props) {
                     </label>
                     <input type="submit" /> 
                   </form>
+                  <br></br>
                 </div>
                 {/* Segmentation Class Selection */}
-                {props.isSegmentationSelected && (
+                {props.isSegmentationSelected && props.segmentationProjection && (
+                  <>
                   <select
                     onChange={(event) => {
                       props.setShowSegmentation(false);
@@ -115,7 +117,8 @@ export default function Sidebar(props) {
                     <option disabled>_________</option>
                     {classElements}
                   </select>
-                )}
+                  <br></br>
+
                 {/* Show Segmentation */}
                 <input
                   type="checkbox"
@@ -125,8 +128,8 @@ export default function Sidebar(props) {
                   }
                 />{" "}
                 Show Segmentation
+                <br></br>
                 {/* show top points */}
-                {props.isSegmentationSelected && (
                   <label>
                     <input
                       type="checkbox"
@@ -137,6 +140,24 @@ export default function Sidebar(props) {
                     />{" "}
                     Show Top Points
                   </label>
+                  <br></br>
+                  <hr></hr>
+                  <label htmlFor="customRange2" className="form-label"># top points</label>
+                  <input 
+                  type="range" 
+                  className="form-range" 
+                  min="1" max="10" 
+                  id="customRange2"
+                  value={props.numTopPoints}
+                  onChange={(event) => {
+                    props.setShowSegmentation(false);
+                    props.setNumTopPoints(event.target.value)
+                    setTimeout(function () {
+                      props.setShowSegmentation(true);
+                    }, 500);
+                    }}  />
+                  <span>{props.numTopPoints}</span>
+                  </>
                 )}
                 {/* <input
                   type="checkbox"
@@ -223,6 +244,7 @@ export default function Sidebar(props) {
           </div>
 
           <div className="aside-child tab-pane container fade" id="route">
+            
             <fieldset>
               <legend>Find Optimal Route</legend>
               <div className="flexx-row">
@@ -272,18 +294,23 @@ export default function Sidebar(props) {
               </div>
               Desired route length (km):
               <br /> <input className="w-50" type="number"></input>
-              <button className="m-1">Start calc</button>
+              <form onSubmit={props.handleRoute}>
+                <input type="submit" />
+              </form>
             </fieldset>
           </div>
 
           <div className="aside-child tab-pane container fade" id="export">
             <fieldset>
               <legend>Export</legend>
-              <button className="m-2" type="button">
-                Save Route
+              <button className="m-2" type="button" onClick={props.exportFile}>
+                Save Route as GeoJSON
               </button>
-              <button className="m-2" type="button">
-                Save Image
+              <button className="m-2" type="button" onClick={props.exportFile2}>
+                Save Route as KML
+              </button>
+              <button className="m-2" type="button" onClick={props.exportFile3}>
+                Save Route as GPX
               </button>
             </fieldset>
           </div>
