@@ -60,6 +60,8 @@ export default function Main() {
     features: [],
   });
 
+  const [numTopPoints, setNumTopPoints] = React.useState(1);
+
   const [cellWidth, setCellWidth] = React.useState(false);
   const [cellHeigth, setCellHeight] = React.useState(false);
 
@@ -266,7 +268,6 @@ export default function Main() {
   }, [segmentationProjection, numTopPoints]);
 
   // Route
-  const [numTopPoints, setNumTopPoints] = React.useState(1);
   const [route, setRoute] = React.useState();
   const [showRoute, setShowRoute] = React.useState(false);
 
