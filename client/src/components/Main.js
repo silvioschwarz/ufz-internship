@@ -2,37 +2,36 @@ import React from "react";
 
 import MapOpenLayers from "./openLayers/MapOpenLayers";
 import Sidebar from "./Sidebar";
-import FileUpload from "./FileUpload";
+// import FileUpload from "./FileUpload";
 
 // const osmtogeojson = require('osmtogeojson');
 const osm2geojson = require("osm2geojson-lite");
 
 import {
-  fromLonLat,
-  get,
   transform,
   transformExtent,
-  Projection,
 } from "ol/proj";
+
 import GeoJSON from "ol/format/GeoJSON";
 import KML from "ol/format/KML"
 import GPX from "ol/format/GPX"
 
 import { vector } from "./openLayers/Source";
-import { extent } from "ol/extent";
+// import { extent } from "ol/extent";
 
-import buffer from "@turf/buffer";
-import pointsWithinPolygon from "@turf/points-within-polygon";
-import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import union from "@turf/union";
+// import buffer from "@turf/buffer";
+// import pointsWithinPolygon from "@turf/points-within-polygon";
+// import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+// import union from "@turf/union";
 
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4";
-import { Icon } from "ol/style";
 
 var startEndCoords  =[]
 
 export default function Main() {
+  //set variables and states
+
   //MAP
   const [center, setCenter] = React.useState([9.0, 52.5]);
   const [zoom, setZoom] = React.useState(7);
@@ -66,6 +65,7 @@ export default function Main() {
 
   const [EPSG, setEPSG] = React.useState("");
 
+  // fetch the proj4 code for the EPSG from EPSG.io and register the projection
   const handleEPSG = (event) => {
     event.preventDefault();
 
@@ -131,6 +131,140 @@ export default function Main() {
     transformedExtent[2].toFixed(3),
   ];
 
+  //
+  // Define functionality in each tab
+  //
+
+  // Segmentation Data
+
+  const segmentationHandler = (event) => {
+    setSegmentationFile(event.target.files[0]);
+    setIsSegmentationSelected(true);
+  };
+
+  React.useEffect(() => {
+    if (isSegmentationSelected && EPSG) {
+      // console.log(segmentationFile.name);
+
+      segmentationFile.text().then((res) => {
+        const data = csvToArray(res);
+
+        const lons = [...new Set(data.map((item) => item.Longitude))].sort();
+        const lats = [...new Set(data.map((item) => item.Latitude))].sort();
+        let width = lats.length - 1;
+        let height = lons.length - 1;
+        let xIntervall = (Math.max(...lats) - Math.min(...lats)) / width;
+        let yIntervall = (Math.max(...lons) - Math.min(...lons)) / height;
+
+        setCellWidth(xIntervall);
+        setCellHeight(yIntervall);
+
+        // console.log([width,height])
+        // console.log([xIntervall,yIntervall])
+
+        let xMin = Math.min(...lats);
+        let xMax = Math.max(...lats);
+        let yMin = Math.min(...lons);
+        let yMax = Math.max(...lons);
+
+        let segmentationClasses = Object.keys(data[0]).slice(2);
+        // let numClasses = segmentationClasses.length;
+        setClasses(segmentationClasses);
+
+        let segmentationFeatures = [];
+
+        data.map((element) => {
+          let { Latitude: lat, Longitude: lon, ...propers } = element;
+          let x = (lat - xMin) / xIntervall;
+          let y = (yMax - lon) / yIntervall;
+
+          let index = y * width + x;
+
+          let maxClass =
+            Object.values(propers)
+              .map((x, i) => [x, i])
+              .reduce((r, a) => (a[0] > r[0] ? a : r))[1] + 1;
+
+          segmentationFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: transform([lat, lon], "EPSG:" + EPSG, "EPSG:4326"),
+            },
+            properties: {
+              classes: propers,
+              maxClass: maxClass,
+              index: index,
+              x: x,
+              y: y,
+            },
+          });
+        });
+
+        // sort segmentation data descending for each class
+        let classArray = segmentationClasses.map((element) => {
+          return segmentationFeatures
+            .filter((feature) => {
+              return (
+                feature.properties.maxClass == element.replace("Class", "")
+              );
+            })
+            .sort(
+              (a, b) =>
+                parseFloat(b.properties.classes.Class1) -
+                parseFloat(a.properties.classes.Class1)
+            );
+        });
+
+        // select n top points for each class
+        let topFeatures = classArray.map((klasse) => {
+          
+          const n = numTopPoints;
+          return klasse.slice(0, n);
+        });
+
+        // construct the topPoints GeoJSON
+        let topPointsTemp = {
+          type: "FeatureCollection",
+          features: topFeatures.flat(),
+        };
+
+        //construct the segmentation Data GeoJSON
+        let segData = {
+          type: "FeatureCollection",
+          features: segmentationFeatures,
+          classes: segmentationClasses,
+          height: height,
+          width: width,
+        };
+
+        // get extent and center of segmentation data
+        let segExtent = transformExtent(
+          new vector({
+            features: new GeoJSON().readFeatures(segData),
+          }).getExtent(),
+          "EPSG:4326",
+          "EPSG:3857"
+        );
+
+        function getCenterOfExtent(Extent) {
+          var X = Extent[0] + (Extent[2] - Extent[0]) / 2;
+          var Y = Extent[1] + (Extent[3] - Extent[1]) / 2;
+          return [X, Y];
+        }
+
+        //set the state variables
+        setCenter(
+          transform(getCenterOfExtent(segExtent), "EPSG:3857", "EPSG:4326")
+        );
+        setExtent(segExtent);
+        setSegmentationData(segData);
+        setTopPoints(topPointsTemp);
+        setShowSegmentation((prevState) => !prevState);
+      });
+    }
+  }, [segmentationProjection, numTopPoints]);
+
   // Route
   const [numTopPoints, setNumTopPoints] = React.useState(1);
   const [route, setRoute] = React.useState();
@@ -143,6 +277,7 @@ export default function Main() {
 
   const[excludedRoad, setExcludedRoad]  =React.useState([])
 
+  //get all roads that are checked
   const roadSelectionHandler = (event) => {
     let selectedRoadTypes = Array.from(
       document.querySelectorAll('.roadTypes input[type="checkbox"]:checked')
@@ -151,6 +286,7 @@ export default function Main() {
     // console.log(selectedRoadTypes)
     setRoadSelection(selectedRoadTypes);
 
+    //get all road types that are not checked -> the ones that should be excluded
     let excludedRoadTypes = Array.from(
       document.querySelectorAll('.roadTypes input[type="checkbox"]:not(:checked)')
     ).map((road) => road.value);
@@ -159,6 +295,7 @@ export default function Main() {
 
     // console.log(geoJSONObject)
 
+    //filter all roads that are selected
     let filteredGeoJSON = {
       type: "FeatureCollection",
       features: geoJSONObject.features.filter((feature) => {
@@ -173,6 +310,7 @@ export default function Main() {
 
   const roadNetworkHandler = (event) => {};
 
+  // request all roads in bunding box from OSM/Overpass-api
   React.useEffect(() => {
     if (isSegmentationSelected) {
       if (!isMounted.current) {
@@ -206,6 +344,7 @@ export default function Main() {
 
           // console.log(query);
 
+          // set up query to overpass-api
           let queryAllRoads = "data=";
           queryAllRoads += `[bbox:${bbox.join(",")}]`;
           queryAllRoads += "[out:xml][timeout:50];";
@@ -297,164 +436,6 @@ export default function Main() {
     }
   }, [roadNetwork]);
 
-  // Segmentation Data
-
-  const segmentationHandler = (event) => {
-    setSegmentationFile(event.target.files[0]);
-    setIsSegmentationSelected(true);
-  };
-
-  React.useEffect(() => {
-    // if (isMounted.current) {
-    if (isSegmentationSelected && EPSG) {
-      // console.log(segmentationFile.name);
-
-      segmentationFile.text().then((res) => {
-        const data = csvToArray(res);
-
-        const lons = [...new Set(data.map((item) => item.Longitude))].sort();
-        const lats = [...new Set(data.map((item) => item.Latitude))].sort();
-        let width = lats.length - 1;
-        let height = lons.length - 1;
-        let xIntervall = (Math.max(...lats) - Math.min(...lats)) / width;
-        let yIntervall = (Math.max(...lons) - Math.min(...lons)) / height;
-
-        setCellWidth(xIntervall);
-        setCellHeight(yIntervall);
-
-        // console.log([width,height])
-        // console.log([xIntervall,yIntervall])
-
-        let xMin = Math.min(...lats);
-        let xMax = Math.max(...lats);
-        let yMin = Math.min(...lons);
-        let yMax = Math.max(...lons);
-
-        let segmentationClasses = Object.keys(data[0]).slice(2);
-        // let numClasses = segmentationClasses.length;
-        setClasses(segmentationClasses);
-
-        let segmentationFeatures = [];
-
-        data.map((element) => {
-          let { Latitude: lat, Longitude: lon, ...propers } = element;
-          let x = (lat - xMin) / xIntervall;
-          let y = (yMax - lon) / yIntervall;
-
-          let index = y * width + x;
-
-          let maxClass =
-            Object.values(propers)
-              .map((x, i) => [x, i])
-              .reduce((r, a) => (a[0] > r[0] ? a : r))[1] + 1;
-
-          segmentationFeatures.push({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: transform([lat, lon], "EPSG:" + EPSG, "EPSG:4326"),
-            },
-            properties: {
-              classes: propers,
-              maxClass: maxClass,
-              index: index,
-              x: x,
-              y: y,
-            },
-          });
-        });
-
-        // sort segmentation data descending for each class
-        let classArray = segmentationClasses.map((element) => {
-          return segmentationFeatures
-            .filter((feature) => {
-              return (
-                feature.properties.maxClass == element.replace("Class", "")
-              );
-            })
-            .sort(
-              (a, b) =>
-                parseFloat(b.properties.classes.Class1) -
-                parseFloat(a.properties.classes.Class1)
-            );
-        });
-
-        let topFeatures = classArray.map((klasse) => {
-          //TODO set n dynamically
-          const n = numTopPoints;
-          return klasse.slice(0, n);
-        });
-
-        let topPointsTemp = {
-          type: "FeatureCollection",
-          features: topFeatures.flat(),
-        };
-
-        let segData = {
-          type: "FeatureCollection",
-          features: segmentationFeatures,
-          classes: segmentationClasses,
-          height: height,
-          width: width,
-        };
-
-        let segExtent = transformExtent(
-          new vector({
-            features: new GeoJSON().readFeatures(segData),
-          }).getExtent(),
-          "EPSG:4326",
-          "EPSG:3857"
-        );
-
-        function getCenterOfExtent(Extent) {
-          var X = Extent[0] + (Extent[2] - Extent[0]) / 2;
-          var Y = Extent[1] + (Extent[3] - Extent[1]) / 2;
-          return [X, Y];
-        }
-
-        setCenter(
-          transform(getCenterOfExtent(segExtent), "EPSG:3857", "EPSG:4326")
-        );
-        setExtent(segExtent);
-        setSegmentationData(segData);
-        setTopPoints(topPointsTemp);
-        setShowSegmentation((prevState) => !prevState);
-      });
-    }
-  }, [segmentationProjection, numTopPoints]);
-
-  if (showSegmentation) {
-    const tabElement = document.getElementById("tab-segmentation").firstChild;
-    // tabElement.classList.remove("active");
-    tabElement.classList.add("done");
-  }
-
-  if (loadRoadNetwork) {
-    const tabElement = document.getElementById("tab-roadnetwork").firstChild;
-    tabElement.classList.add("done");
-  }
-
-  if (route) {
-    const tabElement = document.getElementById("tab-route").firstChild;
-    tabElement.classList.add("done");
-  }
-
-  function csvToArray(str, delimiter = ",") {
-    const rows = str.replace(/\r\n/g, "\n").split("\n");
-    const headers = rows.shift().split(delimiter);
-
-    const arr = rows.map(function (row) {
-      const values = row.split(delimiter);
-      const el = headers.reduce(function (object, header, index) {
-        object[header] = parseFloat(values[index]);
-        return object;
-      }, {});
-      return el;
-    });
-
-    // return the array
-    return arr.slice(0, -1);
-  }
   // ROUTING
   //best points
   //best points  on road
@@ -499,8 +480,49 @@ export default function Main() {
     }
   }, [isRoadLoaded]);
 
+   // add start and end point
+
+   const [clickedCoord, setClickedCoord] = React.useState(false);
+   const [showStartEndPoint, setShowStartEndPoint] = React.useState(false);
+   const [startEndCoord, setStartEndCoord] = React.useState([])
+ 
+   let startEndGeoJSON = {
+     type: "FeatureCollection",
+     features: startEndCoord,
+   };
+ 
+ 
+ 
+   React.useEffect(() => {
+     if (isRoadLoaded &&  clickedCoord != false) {
+       setShowStartEndPoint(false)
+ 
+       startEndCoords.push({
+         type: "Feature",
+         geometry: {
+           type: "Point",
+           coordinates: transform(clickedCoord, "EPSG:3857", "EPSG:4326"),
+         },
+       });
+ 
+       if (startEndCoords.length > 2) {
+         startEndCoords=[];
+       }
+       setStartEndCoord(startEndCoords)
+ 
+       setTimeout(function () {
+         setShowStartEndPoint(true);
+       }, 500);
+ 
+     
+     }
+      
+ 
+   }, [clickedCoord]);
+
   const [osmrData, setOsmrData] = React.useState();
 
+  //request Route from OSMR
   const handleRoute = (event) => {
     event.preventDefault();
 
@@ -509,6 +531,7 @@ export default function Main() {
     });
 
 
+    //set up query to osmr
     let query1="";
 
     if(startEndCoord.length > 1){
@@ -532,13 +555,13 @@ export default function Main() {
     
 
     
-    console.log(query1);
+    // console.log(query1);
 
-    fetch("http://router.project-osrm.org/trip/v1/driving/" + query1, {
+    fetch("https://router.project-osrm.org/trip/v1/driving/" + query1, {
       method: "GET",
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
 
         if (!res.ok) {
           throw new Error("Network response was not OK");
@@ -645,45 +668,42 @@ export default function Main() {
     downloadLinkButton.click();
   }
 
-  // add start and end point
+  // various helper functions
+  // change the  color of sidebar tab
+  if (showSegmentation) {
+    const tabElement = document.getElementById("tab-segmentation").firstChild;
+    // tabElement.classList.remove("active");
+    tabElement.classList.add("done");
+  }
 
-  const [clickedCoord, setClickedCoord] = React.useState(false);
-  const [showStartEndPoint, setShowStartEndPoint] = React.useState(false);
-  const [startEndCoord, setStartEndCoord] = React.useState([])
+  if (loadRoadNetwork) {
+    const tabElement = document.getElementById("tab-roadnetwork").firstChild;
+    tabElement.classList.add("done");
+  }
 
-  let startEndGeoJSON = {
-    type: "FeatureCollection",
-    features: startEndCoord,
-  };
+  if (route) {
+    const tabElement = document.getElementById("tab-route").firstChild;
+    tabElement.classList.add("done");
+  }
 
+  // function to turn csv data into array
+  function csvToArray(str, delimiter = ",") {
+    const rows = str.replace(/\r\n/g, "\n").split("\n");
+    const headers = rows.shift().split(delimiter);
 
+    const arr = rows.map(function (row) {
+      const values = row.split(delimiter);
+      const el = headers.reduce(function (object, header, index) {
+        object[header] = parseFloat(values[index]);
+        return object;
+      }, {});
+      return el;
+    });
 
-  React.useEffect(() => {
-    if (isRoadLoaded &&  clickedCoord != false) {
-      setShowStartEndPoint(false)
-
-      startEndCoords.push({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: transform(clickedCoord, "EPSG:3857", "EPSG:4326"),
-        },
-      });
-
-      if (startEndCoords.length > 2) {
-        startEndCoords=[];
-      }
-      setStartEndCoord(startEndCoords)
-
-      setTimeout(function () {
-        setShowStartEndPoint(true);
-      }, 500);
-
-    
-    }
-     
-
-  }, [clickedCoord]);
+    // return the array
+    return arr.slice(0, -1);
+  }
+ 
 
 
   return (
